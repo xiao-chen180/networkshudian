@@ -9,6 +9,7 @@ public class OrderDTO {
     private Long id;
     private Long userId;
     private BigDecimal totalPrice;
+    private BigDecimal couponDiscount;
     private String status;
     private String shippingAddress;
     private String phone;
@@ -37,6 +38,9 @@ public class OrderDTO {
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public BigDecimal getCouponDiscount() { return couponDiscount; }
+    public void setCouponDiscount(BigDecimal couponDiscount) { this.couponDiscount = couponDiscount; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

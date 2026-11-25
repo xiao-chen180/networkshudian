@@ -7,6 +7,7 @@ import java.util.List;
 public record OrderPendingRequest(
         String shippingAddress,
         String phone,
-        @Valid List<OrderItemRequest> items
+        @Valid List<OrderItemRequest> items,
+        Long userCouponId
 ) {
 }

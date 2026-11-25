@@ -39,4 +39,14 @@ public class CheckInController {
         CheckInDTO status = checkInService.checkIn(userId);
         return ResponseEntity.ok(status);
     }
+
+    /** 签到抽奖：连续签到满 7 天每天可抽一次，结果落库 */
+    @PostMapping("/lottery")
+    public ResponseEntity<java.util.Map<String, Object>> drawLottery() {
+        Long userId = currentUser.getId();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(checkInService.drawLottery(userId));
+    }
 }

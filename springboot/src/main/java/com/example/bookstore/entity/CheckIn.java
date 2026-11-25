@@ -23,6 +23,10 @@ public class CheckIn {
     @Column(name = "consecutive_days")
     private Integer consecutiveDays = 1;
 
+    /** 当日抽奖是否已领取，避免重复抽奖 */
+    @Column(name = "lottery_drawn")
+    private Boolean lotteryDrawn = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -44,6 +48,9 @@ public class CheckIn {
 
     public Integer getConsecutiveDays() { return consecutiveDays; }
     public void setConsecutiveDays(Integer consecutiveDays) { this.consecutiveDays = consecutiveDays; }
+
+    public Boolean getLotteryDrawn() { return lotteryDrawn; }
+    public void setLotteryDrawn(Boolean lotteryDrawn) { this.lotteryDrawn = lotteryDrawn; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

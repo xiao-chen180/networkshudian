@@ -24,12 +24,22 @@ public class AdminService {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
+    private final MessageService messageService;
+    private final CouponService couponService;
 
     public AdminService(UserRepository userRepository, OrderRepository orderRepository,
-                        BookRepository bookRepository) {
+                        BookRepository bookRepository, MessageService messageService,
+                        CouponService couponService) {
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.bookRepository = bookRepository;
+        this.messageService = messageService;
+        this.couponService = couponService;
+    }
+
+    /** 订单号统一展示格式 */
+    private String orderNo(Order order) {
+        return "SH" + String.format("%08d", order.getId());
     }
 
     // ========== Dashboard 统计 ==========
@@ -156,6 +166,8 @@ public class AdminService {
         }
         order.setStatus("SHIPPED");
         orderRepository.save(order);
+        messageService.sendMessage(order.getUser().getId(), "订单已发货",
+                "订单 " + orderNo(order) + " 已发出，可在订单中心查看物流状态。", "ORDER");
     }
 
     @Transactional
@@ -167,6 +179,8 @@ public class AdminService {
         }
         order.setStatus("COMPLETED");
         orderRepository.save(order);
+        messageService.sendMessage(order.getUser().getId(), "订单已完成",
+                "订单 " + orderNo(order) + " 已完成，写下书评可得 5 积分。", "ORDER");
     }
 
     @Transactional
@@ -192,6 +206,17 @@ public class AdminService {
         }
         order.setStatus("CANCELLED");
         orderRepository.save(order);
+
+        // 已核销的优惠券随订单取消退回
+        if (order.getUserCouponId() != null) {
+            couponService.restoreCoupon(order.getUser().getId(), order.getUserCouponId());
+            order.setUserCouponId(null);
+            order.setCouponDiscount(BigDecimal.ZERO);
+            orderRepository.save(order);
+        }
+
+        messageService.sendMessage(order.getUser().getId(), "订单已取消",
+                "订单 " + orderNo(order) + " 已被取消，库存与优惠券已退回。", "ORDER");
     }
 
     // ========== 书籍批量调价 ==========

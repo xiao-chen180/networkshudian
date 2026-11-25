@@ -8,6 +8,7 @@ public class CheckInDTO {
     private Boolean checkedInToday;
     private Integer consecutiveDays;
     private Integer totalPoints;
+    private Boolean lotteryDrawn = false;
     private List<LocalDate> checkInDates;
 
     public CheckInDTO() {}
@@ -20,6 +21,9 @@ public class CheckInDTO {
 
     public Integer getTotalPoints() { return totalPoints; }
     public void setTotalPoints(Integer totalPoints) { this.totalPoints = totalPoints; }
+
+    public Boolean getLotteryDrawn() { return lotteryDrawn; }
+    public void setLotteryDrawn(Boolean lotteryDrawn) { this.lotteryDrawn = lotteryDrawn; }
 
     public List<LocalDate> getCheckInDates() { return checkInDates; }
     public void setCheckInDates(List<LocalDate> checkInDates) { this.checkInDates = checkInDates; }

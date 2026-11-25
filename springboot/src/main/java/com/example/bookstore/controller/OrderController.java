@@ -35,7 +35,8 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         OrderDTO order = orderService.createOrderWithBalance(
-                userId, request.addressId(), toOrderItems(request.items()), request.paymentMethod());
+                userId, request.addressId(), toOrderItems(request.items()),
+                request.paymentMethod(), request.userCouponId());
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
@@ -49,9 +50,11 @@ public class OrderController {
         OrderDTO order;
         if (request.items() != null && !request.items().isEmpty()) {
             order = orderService.createPendingOrderWithItems(
-                    userId, request.shippingAddress(), request.phone(), toOrderItems(request.items()));
+                    userId, request.shippingAddress(), request.phone(),
+                    toOrderItems(request.items()), request.userCouponId());
         } else {
-            order = orderService.createPendingOrder(userId, request.shippingAddress(), request.phone());
+            order = orderService.createPendingOrder(
+                    userId, request.shippingAddress(), request.phone(), request.userCouponId());
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }

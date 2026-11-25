@@ -9,6 +9,7 @@ import com.example.bookstore.repository.CouponRepository;
 import com.example.bookstore.repository.UserCouponRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -114,6 +115,36 @@ public class CouponService {
             default:
                 return BigDecimal.ZERO;
         }
+    }
+
+    /**
+     * 下单时核销优惠券：校验归属与可用性，计算抵扣金额并把券置为已使用。
+     * 返回抵扣金额；非法情况抛异常由调用方事务回滚。
+     */
+    @Transactional
+    public BigDecimal useCoupon(Long userId, Long userCouponId, BigDecimal totalAmount) {
+        UserCoupon userCoupon = userCouponRepository.findById(userCouponId)
+                .orElseThrow(() -> new CustomException("优惠券不存在", HttpStatus.NOT_FOUND.value()));
+        if (userCoupon.getUserId() == null || !userCoupon.getUserId().equals(userId)) {
+            throw new CustomException("优惠券不属于当前用户", HttpStatus.FORBIDDEN.value());
+        }
+
+        BigDecimal discount = calculateDiscount(userCouponId, totalAmount);
+
+        userCoupon.setStatus("USED");
+        userCouponRepository.save(userCoupon);
+        return discount;
+    }
+
+    /** 取消订单时退回优惠券 */
+    @Transactional
+    public void restoreCoupon(Long userId, Long userCouponId) {
+        userCouponRepository.findById(userCouponId).ifPresent(userCoupon -> {
+            if (userId == null || userId.equals(userCoupon.getUserId())) {
+                userCoupon.setStatus("UNUSED");
+                userCouponRepository.save(userCoupon);
+            }
+        });
     }
 
     public CouponDTO createCoupon(CouponDTO dto) {

@@ -32,40 +32,63 @@ public class OrderService {
     private final UserRepository userRepository;
     private final UserBalanceService userBalanceService;
     private final AddressRepository addressRepository;
+    private final CouponService couponService;
+    private final MessageService messageService;
 
     public OrderService(OrderRepository orderRepository, BookRepository bookRepository,
                        CartItemRepository cartItemRepository, UserRepository userRepository,
-                       UserBalanceService userBalanceService, AddressRepository addressRepository) {
+                       UserBalanceService userBalanceService, AddressRepository addressRepository,
+                       CouponService couponService, MessageService messageService) {
         this.orderRepository = orderRepository;
         this.bookRepository = bookRepository;
         this.cartItemRepository = cartItemRepository;
         this.userRepository = userRepository;
         this.userBalanceService = userBalanceService;
         this.addressRepository = addressRepository;
+        this.couponService = couponService;
+        this.messageService = messageService;
     }
 
     /** 购物车下单：明细来自购物车，创建后清空购物车。 */
     @Transactional
     public OrderDTO createOrder(Long userId, String shippingAddress, String phone) {
+        return createOrder(userId, shippingAddress, phone, null);
+    }
+
+    @Transactional
+    public OrderDTO createOrder(Long userId, String shippingAddress, String phone, Long userCouponId) {
         User user = requireUser(userId);
         List<OrderItemDTO> items = loadCartAsItems(userId);
-        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone);
+        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, userCouponId);
         cartItemRepository.deleteByUserId(userId);
+        notifyCreated(savedOrder);
         return convertToDTO(savedOrder);
     }
 
     /** 兼容旧接口：与 createOrder 行为一致（创建 PENDING 订单并清空购物车）。 */
     @Transactional
     public OrderDTO createPendingOrder(Long userId, String shippingAddress, String phone) {
-        return createOrder(userId, shippingAddress, phone);
+        return createOrder(userId, shippingAddress, phone, null);
+    }
+
+    @Transactional
+    public OrderDTO createPendingOrder(Long userId, String shippingAddress, String phone, Long userCouponId) {
+        return createOrder(userId, shippingAddress, phone, userCouponId);
     }
 
     /** 按给定明细创建待支付订单（不清空购物车）。 */
     @Transactional
     public OrderDTO createPendingOrderWithItems(Long userId, String shippingAddress, String phone,
-                                                List<OrderItemDTO> items) {
+                                                 List<OrderItemDTO> items) {
+        return createPendingOrderWithItems(userId, shippingAddress, phone, items, null);
+    }
+
+    @Transactional
+    public OrderDTO createPendingOrderWithItems(Long userId, String shippingAddress, String phone,
+                                                 List<OrderItemDTO> items, Long userCouponId) {
         User user = requireUser(userId);
-        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone);
+        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, userCouponId);
+        notifyCreated(savedOrder);
         return convertToDTO(savedOrder);
     }
 
@@ -73,6 +96,12 @@ public class OrderService {
     @Transactional
     public OrderDTO createOrderWithBalance(Long userId, Long addressId, List<OrderItemDTO> items,
                                            String paymentMethod) {
+        return createOrderWithBalance(userId, addressId, items, paymentMethod, null);
+    }
+
+    @Transactional
+    public OrderDTO createOrderWithBalance(Long userId, Long addressId, List<OrderItemDTO> items,
+                                           String paymentMethod, Long userCouponId) {
         User user = requireUser(userId);
 
         String shippingAddress = null;
@@ -85,7 +114,7 @@ public class OrderService {
             phone = address.getPhone();
         }
 
-        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone);
+        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, userCouponId);
 
         PaymentMethod method = PaymentMethod.from(paymentMethod);
         if (method == PaymentMethod.BALANCE) {
@@ -99,6 +128,9 @@ public class OrderService {
 
         if (OrderStatus.PAID.name().equals(savedOrder.getStatus())) {
             adjustSalesCount(savedOrder, 1);
+            notifyPaid(savedOrder);
+        } else {
+            notifyCreated(savedOrder);
         }
 
         cartItemRepository.deleteByUserId(userId);
@@ -140,9 +172,13 @@ public class OrderService {
         order.setStatus(target.name());
         if (target == OrderStatus.CANCELLED && previous != OrderStatus.CANCELLED) {
             restoreStock(order);
+            restoreCoupon(order, userId);
+            messageService.sendMessage(userId, "订单已取消",
+                    "订单 SH" + String.format("%08d", order.getId()) + " 已取消，库存与优惠券已退回。", "ORDER");
         }
         if (target == OrderStatus.PAID && previous != OrderStatus.PAID) {
             adjustSalesCount(order, 1);
+            notifyPaid(order);
         }
         return convertToDTO(orderRepository.save(order));
     }
@@ -160,14 +196,16 @@ public class OrderService {
         }
         if (status == OrderStatus.PENDING) {
             restoreStock(order);
+            restoreCoupon(order, userId);
         }
         orderRepository.delete(order);
     }
 
     // ========== 内部实现 ==========
 
-    /** 统一的下单核心：校验数量与库存、按用户折扣计算成交价、扣减库存、落库。 */
-    private Order createOrderEntity(User user, List<OrderItemDTO> items, String shippingAddress, String phone) {
+    /** 统一的下单核心：校验数量与库存、按用户折扣计算成交价、核销优惠券、扣减库存、落库。 */
+    private Order createOrderEntity(User user, List<OrderItemDTO> items, String shippingAddress,
+                                    String phone, Long userCouponId) {
         if (items == null || items.isEmpty()) {
             throw new CustomException("订单明细不能为空", HttpStatus.BAD_REQUEST.value());
         }
@@ -189,7 +227,7 @@ public class OrderService {
             }
 
             // 后端根据书籍原价和用户折扣计算成交单价，不信任前端传入的价格
-            BigDecimal unitPrice = book.getPrice().multiply(user.getDiscount());
+            BigDecimal unitPrice = book.getPrice().multiply(user.getDiscount()).setScale(2, java.math.RoundingMode.HALF_UP);
 
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
@@ -203,8 +241,42 @@ public class OrderService {
             bookRepository.save(book);
         }
 
+        // 优惠券核销：金额不足门槛或不属于本人会直接抛错，事务回滚
+        if (userCouponId != null) {
+            BigDecimal discount = couponService.useCoupon(user.getId(), userCouponId, totalPrice);
+            if (discount.compareTo(totalPrice) > 0) {
+                discount = totalPrice;
+            }
+            order.setCouponDiscount(discount);
+            order.setUserCouponId(userCouponId);
+            totalPrice = totalPrice.subtract(discount);
+        }
+
         order.setTotalPrice(totalPrice);
         return orderRepository.save(order);
+    }
+
+    private void notifyCreated(Order order) {
+        messageService.sendMessage(order.getUser().getId(), "订单已创建",
+                "订单 SH" + String.format("%08d", order.getId())
+                        + " 已创建，应付 ¥" + order.getTotalPrice().toPlainString()
+                        + "，请在 30 分钟内完成支付。", "ORDER");
+    }
+
+    private void notifyPaid(Order order) {
+        messageService.sendMessage(order.getUser().getId(), "支付成功",
+                "订单 SH" + String.format("%08d", order.getId())
+                        + " 已付款 ¥" + order.getTotalPrice().toPlainString() + "，仓库将在 48 小时内发货。", "ORDER");
+    }
+
+    /** 取消订单时退回优惠券 */
+    private void restoreCoupon(Order order, Long userId) {
+        if (order.getUserCouponId() != null) {
+            couponService.restoreCoupon(userId, order.getUserCouponId());
+            order.setUserCouponId(null);
+            order.setCouponDiscount(BigDecimal.ZERO);
+            orderRepository.save(order);
+        }
     }
 
     private List<OrderItemDTO> loadCartAsItems(Long userId) {
@@ -273,6 +345,7 @@ public class OrderService {
         dto.setId(order.getId());
         dto.setUserId(order.getUser().getId());
         dto.setTotalPrice(order.getTotalPrice());
+        dto.setCouponDiscount(order.getCouponDiscount());
         dto.setStatus(order.getStatus());
         dto.setShippingAddress(order.getShippingAddress());
         dto.setPhone(order.getPhone());

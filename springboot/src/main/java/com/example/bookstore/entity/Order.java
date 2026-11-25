@@ -21,6 +21,14 @@ public class Order {
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
 
+    /** 优惠券抵扣金额（下单时核销，取消订单时退回） */
+    @Column(name = "coupon_discount", precision = 10, scale = 2)
+    private BigDecimal couponDiscount = BigDecimal.ZERO;
+
+    /** 使用的用户优惠券 ID */
+    @Column(name = "user_coupon_id")
+    private Long userCouponId;
+
     @Column(length = 20)
     private String status = "PENDING";
 
@@ -74,6 +82,12 @@ public class Order {
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public BigDecimal getCouponDiscount() { return couponDiscount; }
+    public void setCouponDiscount(BigDecimal couponDiscount) { this.couponDiscount = couponDiscount; }
+
+    public Long getUserCouponId() { return userCouponId; }
+    public void setUserCouponId(Long userCouponId) { this.userCouponId = userCouponId; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
