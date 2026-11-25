@@ -1,0 +1,120 @@
+/* 书香阁项目 - 全局颜色变量 */
+:root {
+  /* 主色调 - 棕木色系 */
+  --primary: #8b5a2b;
+  --primary-light: #a0522d;
+  --primary-dark: #6b4423;
+  --primary-bg: rgba(139, 90, 43, 0.1);
+
+  /* 辅助色 - 金色 */
+  --secondary: #d4a574;
+  --secondary-light: #e8c9a0;
+  --secondary-dark: #b8956a;
+
+  /* 强调色 - 红色 */
+  --accent: #c21500;
+  --accent-light: #e8392e;
+
+  /* 成功色 */
+  --success: #52c41a;
+  --success-light: #95de64;
+
+  /* 警告色 */
+  --warning: #faad14;
+  --warning-light: #ffd666;
+
+  /* 危险色 */
+  --danger: #ff4d4f;
+  --danger-light: #ff7875;
+
+  /* 信息色 */
+  --info: #1890ff;
+  --info-light: #69c0ff;
+
+  /* 中性色 */
+  --text-primary: #4a3728;
+  --text-secondary: #8b7355;
+  --text-muted: #b8a594;
+  --text-white: #ffffff;
+
+  /* 背景色 */
+  --bg-primary: #faf7f2;
+  --bg-secondary: #f0ebe3;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f0e8;
+
+  /* 边框色 */
+  --border-color: #e8dfd5;
+  --border-light: #f0ebe3;
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(139, 90, 43, 0.08);
+  --shadow-md: 0 4px 16px rgba(139, 90, 43, 0.12);
+  --shadow-lg: 0 8px 32px rgba(139, 90, 43, 0.16);
+  --shadow-xl: 0 12px 48px rgba(139, 90, 43, 0.2);
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 50%;
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* 字体 */
+  --font-sans: 'Microsoft YaHei', 'PingFang SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'STKaiti', 'KaiTi', 'SimSun', serif;
+  --font-mono: 'Consolas', 'Monaco', monospace;
+
+  /* 字号 */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+
+  /* 动画时长 */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* 动画缓动 */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Z-index */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+}
+
+/* 深色模式 */
+:root.dark {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1e2d4a;
+  --bg-hover: #253553;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --text-muted: #707070;
+  --border-color: #2a3a5a;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
