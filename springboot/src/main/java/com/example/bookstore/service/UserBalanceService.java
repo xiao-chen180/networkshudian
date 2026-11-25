@@ -26,13 +26,6 @@ public class UserBalanceService {
     }
 
     @Transactional
-    public UserBalance recharge(Long userId, BigDecimal amount) {
-        UserBalance balance = getOrCreateBalance(userId);
-        balance.setBalance(balance.getBalance().add(amount));
-        return userBalanceRepository.save(balance);
-    }
-
-    @Transactional
     public boolean deduct(Long userId, BigDecimal amount) {
         UserBalance balance = getOrCreateBalance(userId);
         if (balance.getBalance().compareTo(amount) >= 0) {

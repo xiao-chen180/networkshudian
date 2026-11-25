@@ -10,6 +10,7 @@ import com.example.bookstore.entity.User;
 import com.example.bookstore.exception.CustomException;
 import com.example.bookstore.repository.UserRepository;
 import com.example.bookstore.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,7 +24,9 @@ import java.math.BigDecimal;
 @Service
 public class UserService {
 
-    private static final String ADMIN_SECRET_KEY = "123chl";
+    // 管理员注册密钥：仅当通过环境变量 BOOKSTORE_ADMIN_SECRET 配置后才生效，默认关闭
+    @Value("${bookstore.admin-secret:}")
+    private String adminSecretKey;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -57,9 +60,9 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
 
-        // 根据adminSecret参数设置角色，默认为USER
+        // 仅在服务端配置了管理员密钥时才允许通过注册创建管理员
         String adminSecret = request.getAdminSecret();
-        if (adminSecret != null && ADMIN_SECRET_KEY.equals(adminSecret)) {
+        if (adminSecret != null && !adminSecretKey.isBlank() && adminSecretKey.equals(adminSecret)) {
             user.setRole("ADMIN");
             user.setDiscount(BigDecimal.valueOf(1.0));
         } else {

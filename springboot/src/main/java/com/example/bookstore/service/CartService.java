@@ -33,6 +33,10 @@ public class CartService {
 
     @Transactional
     public CartItemDTO addToCart(Long userId, Long bookId, Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new CustomException("商品数量必须大于0", HttpStatus.BAD_REQUEST.value());
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("用户不存在", HttpStatus.NOT_FOUND.value()));
 
@@ -77,6 +81,10 @@ public class CartService {
 
         if (!cartItem.getUser().getId().equals(userId)) {
             throw new CustomException("无权修改此购物车项", HttpStatus.FORBIDDEN.value());
+        }
+
+        if (quantity == null || quantity <= 0) {
+            throw new CustomException("商品数量必须大于0", HttpStatus.BAD_REQUEST.value());
         }
 
         if (cartItem.getBook().getStock() < quantity) {

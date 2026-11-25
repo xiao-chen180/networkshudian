@@ -57,7 +57,7 @@
               </div>
               <div class="meta-item">
                 <span class="meta-label">分类</span>
-                <span class="meta-value category-tag">{{ book.category?.name || '未分类' }}</span>
+                <span class="meta-value category-tag">{{ book.categoryName || '未分类' }}</span>
               </div>
             </div>
 
@@ -223,7 +223,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">分类</span>
-                  <span class="info-value">{{ book.category?.name || '未分类' }}</span>
+                  <span class="info-value">{{ book.categoryName || '未分类' }}</span>
                 </div>
               </div>
             </div>
@@ -428,9 +428,9 @@ const loadBook = async () => {
 
 const loadRelatedBooks = async () => {
   try {
-    const categoryId = book.value?.category?.id
+    const categoryId = book.value?.categoryId
     if (categoryId) {
-      const response = await bookAPI.getAll({ categoryId, limit: 4 })
+      const response = await bookAPI.getAll({ categoryId, page: 0, size: 4 })
       relatedBooks.value = (response.data.content || []).filter(b => b.id !== book.value?.id).slice(0, 4)
     } else {
       const response = await bookAPI.getAll({ limit: 4 })
@@ -574,7 +574,7 @@ const buyNow = () => {
     router.push('/login')
     return
   }
-  router.push(`/buy-now?bookId=${book.value.id}`)
+  router.push(`/buy-now?bookId=${book.value.id}&quantity=${buyQuantity.value}`)
 }
 
 const goToBook = (id) => {

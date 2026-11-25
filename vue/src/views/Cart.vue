@@ -23,7 +23,7 @@
             <img :src="getCover(item)" class="item-cover" />
             <div class="item-info">
               <h3 class="item-name">{{ item.bookName }}</h3>
-              <p class="item-author">{{ item.bookAuthor }}</p>
+              <p class="item-author">{{ item.author }}</p>
               <div class="item-bottom">
                 <span class="item-price">¥{{ formatPrice(item.price) }}</span>
                 <div class="qty-control">
@@ -119,7 +119,7 @@ const removeItem = async (id) => {
 const goCheckout = () => {
   if (selectedItems.value.length === 0) return
   const ids = selectedItems.value.map(i => i.id).join(',')
-  router.push(`/checkout?cartIds=${ids}`)
+  router.push(`/checkout?ids=${ids}`)
 }
 
 const getCover = (item) => `https://picsum.photos/seed/${item.bookId || item.id}/200/280.jpg`

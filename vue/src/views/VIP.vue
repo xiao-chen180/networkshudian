@@ -272,7 +272,7 @@ const loadOrderStats = async () => {
     const response = await orderAPI.getAll()
     const orders = response.data || []
     orderCount.value = orders.length
-    totalSpent.value = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
+    totalSpent.value = orders.reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0)
     savedAmount.value = Math.round(totalSpent.value * 0.05)
     growthPoints.value = totalSpent.value
     recentOrders.value = orders.slice(0, 3)

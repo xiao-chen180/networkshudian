@@ -33,6 +33,9 @@ public class MessageService {
     public void markAsRead(Long userId, Long messageId) {
         Message msg = messageRepository.findById(messageId)
                 .orElseThrow(() -> new CustomException("消息不存在", HttpStatus.NOT_FOUND.value()));
+        if (!msg.getUserId().equals(userId)) {
+            throw new CustomException("消息不存在", HttpStatus.NOT_FOUND.value());
+        }
         msg.setIsRead(true);
         messageRepository.save(msg);
     }

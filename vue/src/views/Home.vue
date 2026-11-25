@@ -186,17 +186,6 @@ const currentQuote = ref(null)
 const salesRanking = ref([])
 const recommendBooks = ref([])
 
-const mockBooks = [
-  { id: 1, name: '红楼梦', author: '曹雪芹', price: 98.00, isbn: '9787020002200', categoryId: 1 },
-  { id: 2, name: '活着', author: '余华', price: 45.00, isbn: '9787544250894', categoryId: 1 },
-  { id: 3, name: '三体', author: '刘慈欣', price: 68.00, isbn: '9787536692930', categoryId: 1 },
-  { id: 4, name: '百年孤独', author: '加西亚·马尔克斯', price: 55.00, isbn: '9787544244909', categoryId: 1 },
-  { id: 5, name: '三国演义', author: '罗贯中', price: 78.00, isbn: '9787020000804', categoryId: 1 },
-  { id: 6, name: '平凡的世界', author: '路遥', price: 108.00, isbn: '9787020024727', categoryId: 1 },
-  { id: 7, name: '追风筝的人', author: '卡勒德·胡赛尼', price: 39.00, isbn: '9787208061644', categoryId: 1 },
-  { id: 8, name: '围城', author: '钱钟书', price: 35.00, isbn: '9787020002217', categoryId: 1 }
-]
-
 // 滚动动画观察器
 let observer = null
 
@@ -232,15 +221,11 @@ const loadCategories = async () => {
 
 const loadHotBooks = async () => {
   try {
-    const response = await bookAPI.getAll({ limit: 8 })
-    if (response.data && response.data.content && response.data.content.length > 0) {
-      hotBooks.value = response.data.content.slice(0, 8)
-    } else {
-      hotBooks.value = mockBooks
-    }
+    const response = await bookAPI.getAll({ page: 0, size: 8 })
+    hotBooks.value = response.data?.content?.slice(0, 8) || []
   } catch (error) {
     console.error('Failed to load books:', error)
-    hotBooks.value = mockBooks
+    hotBooks.value = []
   }
 }
 

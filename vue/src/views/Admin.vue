@@ -316,7 +316,7 @@
                     <span class="stat-text">订单</span>
                   </div>
                   <div class="user-stat">
-                    <span class="stat-num">{{ user.discount }}折</span>
+                    <span class="stat-num">{{ formatDiscount(user.discount) }}</span>
                     <span class="stat-text">折扣</span>
                   </div>
                 </div>
@@ -399,7 +399,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" @click="showBookDialog = false">取消</button>
-          <button class="btn btn-primary" @click="saveBook">保存</button>
+          <button class="btn btn-primary" @click="saveBook" :disabled="savingBook">保存</button>
         </div>
       </div>
     </div>
@@ -477,6 +477,7 @@ const orderFilter = ref('ALL')
 // ========== 弹窗 ==========
 const showBookDialog = ref(false)
 const showPriceDialog = ref(false)
+const savingBook = ref(false)
 const editingBook = ref({})
 const priceForm = reactive({
   categoryId: null,
@@ -662,11 +663,18 @@ const openBookDialog = (book) => {
   showBookDialog.value = true
 }
 
+const formatDiscount = (value) => {
+  const num = Number(value)
+  return Number.isFinite(num) && num > 0 ? `${Math.round(num * 100)}折` : '—'
+}
+
 const saveBook = async () => {
+  if (savingBook.value) return
   if (!editingBook.value.name || !editingBook.value.author || !editingBook.value.isbn) {
     ElMessage.warning('请填写必要字段')
     return
   }
+  savingBook.value = true
   try {
     if (editingBook.value.id) {
       await adminAPI.updateBook(editingBook.value.id, editingBook.value)
@@ -680,6 +688,8 @@ const saveBook = async () => {
     loadDashboard()
   } catch (e) {
     ElMessage.error('操作失败: ' + (e.response?.data?.message || e.message))
+  } finally {
+    savingBook.value = false
   }
 }
 

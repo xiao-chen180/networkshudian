@@ -12,10 +12,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
+
+    // 用户端允许的订单状态流转；PAID 仅用于模拟支付，其余状态由管理员维护
+    private static final Map<String, Set<String>> USER_ALLOWED_STATUS_TRANSITIONS = Map.of(
+            "PENDING", Set.of("PAID", "CANCELLED"),
+            "SHIPPED", Set.of("COMPLETED")
+    );
 
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
@@ -53,6 +61,7 @@ public class OrderService {
 
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (CartItem cartItem : cartItems) {
+            validateQuantity(cartItem.getQuantity());
             Book book = cartItem.getBook();
             if (book.getStock() < cartItem.getQuantity()) {
                 throw new CustomException("书籍 " + book.getName() + " 库存不足", HttpStatus.BAD_REQUEST.value());
@@ -97,6 +106,7 @@ public class OrderService {
 
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (CartItem cartItem : cartItems) {
+            validateQuantity(cartItem.getQuantity());
             Book book = cartItem.getBook();
             if (book.getStock() < cartItem.getQuantity()) {
                 throw new CustomException("书籍 " + book.getName() + " 库存不足", HttpStatus.BAD_REQUEST.value());
@@ -138,6 +148,7 @@ public class OrderService {
 
         BigDecimal calculatedTotal = BigDecimal.ZERO;
         for (OrderItemDTO itemDTO : items) {
+            validateQuantity(itemDTO.getQuantity());
             Book book = bookRepository.findById(itemDTO.getBookId())
                     .orElseThrow(() -> new CustomException("书籍不存在", HttpStatus.NOT_FOUND.value()));
 
@@ -190,7 +201,8 @@ public class OrderService {
 
         Order order = new Order();
         order.setUser(user);
-        order.setStatus("PAID");
+        // 仅余额支付可在此直接完成；其他渠道必须等待支付确认
+        order.setStatus("PENDING");
 
         if (addressId != null) {
             Address address = addressRepository.findByIdAndUserId(addressId, userId)
@@ -204,6 +216,7 @@ public class OrderService {
         // 后端计算实际总价
         BigDecimal calculatedTotal = BigDecimal.ZERO;
         for (OrderItemDTO itemDTO : items) {
+            validateQuantity(itemDTO.getQuantity());
             Book book = bookRepository.findById(itemDTO.getBookId())
                     .orElseThrow(() -> new CustomException("书籍不存在", HttpStatus.NOT_FOUND.value()));
 
@@ -233,9 +246,13 @@ public class OrderService {
             if (!success) {
                 throw new CustomException("余额不足", HttpStatus.BAD_REQUEST.value());
             }
+            order.setStatus("PAID");
         }
 
         Order savedOrder = orderRepository.save(order);
+        if ("PAID".equals(savedOrder.getStatus())) {
+            adjustSalesCount(savedOrder, 1);
+        }
 
         // 下单成功后清空购物车
         cartItemRepository.deleteByUserId(userId);
@@ -252,7 +269,24 @@ public class OrderService {
             throw new CustomException("无权修改此订单", HttpStatus.FORBIDDEN.value());
         }
 
+        if (status == null || status.isBlank()) {
+            throw new CustomException("订单状态不能为空", HttpStatus.BAD_REQUEST.value());
+        }
+        String previousStatus = order.getStatus();
+        if (!status.equals(previousStatus)) {
+            Set<String> allowed = USER_ALLOWED_STATUS_TRANSITIONS.getOrDefault(previousStatus, Set.of());
+            if (!allowed.contains(status)) {
+                throw new CustomException("非法的订单状态变更", HttpStatus.BAD_REQUEST.value());
+            }
+        }
+
         order.setStatus(status);
+        if ("CANCELLED".equals(status) && !"CANCELLED".equals(previousStatus)) {
+            restoreStock(order);
+        }
+        if ("PAID".equals(status) && !"PAID".equals(previousStatus)) {
+            adjustSalesCount(order, 1);
+        }
         Order updatedOrder = orderRepository.save(order);
 
         return convertToDTO(updatedOrder);
@@ -267,7 +301,37 @@ public class OrderService {
             throw new CustomException("无权删除此订单", HttpStatus.FORBIDDEN.value());
         }
 
+        if (!"PENDING".equals(order.getStatus()) && !"CANCELLED".equals(order.getStatus())) {
+            throw new CustomException("只能删除待付款或已取消的订单", HttpStatus.BAD_REQUEST.value());
+        }
+        if ("PENDING".equals(order.getStatus())) {
+            restoreStock(order);
+        }
         orderRepository.delete(order);
+    }
+
+    private void restoreStock(Order order) {
+        for (OrderItem item : order.getItems()) {
+            Book book = item.getBook();
+            book.setStock(book.getStock() + item.getQuantity());
+            bookRepository.save(book);
+        }
+    }
+
+    private void adjustSalesCount(Order order, int direction) {
+        for (OrderItem item : order.getItems()) {
+            Book book = item.getBook();
+            int current = book.getSalesCount() != null ? book.getSalesCount() : 0;
+            int updated = current + direction * item.getQuantity();
+            book.setSalesCount(Math.max(0, updated));
+            bookRepository.save(book);
+        }
+    }
+
+    private void validateQuantity(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new CustomException("商品数量必须大于0", HttpStatus.BAD_REQUEST.value());
+        }
     }
 
     private OrderDTO convertToDTO(Order order) {

@@ -42,6 +42,7 @@
   --bg-secondary: #f0ebe3;
   --bg-card: #ffffff;
   --bg-hover: #f5f0e8;
+  --bg-page: #faf7f2;
 
   /* 边框色 */
   --border-color: #e8dfd5;
@@ -110,6 +111,7 @@
   --bg-secondary: #16213e;
   --bg-card: #1e2d4a;
   --bg-hover: #253553;
+  --bg-page: #1a1a2e;
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
   --text-muted: #707070;

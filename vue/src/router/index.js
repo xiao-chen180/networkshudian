@@ -121,6 +121,10 @@ const routes = [
     path: '/checkin',
     name: 'CheckIn',
     component: () => import('../views/CheckIn.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
 ]
 

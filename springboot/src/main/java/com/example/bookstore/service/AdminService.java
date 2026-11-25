@@ -167,10 +167,15 @@ public class AdminService {
         if ("COMPLETED".equals(order.getStatus())) {
             throw new CustomException("已完成的订单无法取消", HttpStatus.BAD_REQUEST.value());
         }
-        // 恢复库存
+        // 恢复库存；已支付订单同时回退销量
+        boolean wasPaid = "PAID".equals(order.getStatus());
         for (OrderItem item : order.getItems()) {
             Book book = item.getBook();
             book.setStock(book.getStock() + item.getQuantity());
+            if (wasPaid) {
+                int current = book.getSalesCount() != null ? book.getSalesCount() : 0;
+                book.setSalesCount(Math.max(0, current - item.getQuantity()));
+            }
             bookRepository.save(book);
         }
         order.setStatus("CANCELLED");

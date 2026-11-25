@@ -167,6 +167,18 @@ const createPendingOrder = async (orderData) => {
   }
 }
 
+const removePurchasedCartItems = async () => {
+  // 只删除本次结算涉及的购物车项；立即购买不触碰购物车
+  const idsParam = route.query.ids
+  if (!idsParam) return
+  const ids = String(idsParam)
+    .split(',')
+    .map(id => parseInt(id, 10))
+    .filter(Number.isFinite)
+  if (ids.length === 0) return
+  await Promise.allSettled(ids.map(id => cartAPI.removeFromCart(id)))
+}
+
 const completePayment = async () => {
   if (isProcessing.value || !orderId.value) return
 
@@ -175,11 +187,11 @@ const completePayment = async () => {
   try {
     await orderAPI.updateStatus(orderId.value, 'PAID')
 
-    // 支付成功后清空购物车
+    // 支付成功后只移除本次结算的商品，避免误删未结算商品
     try {
-      await cartAPI.clearCart()
+      await removePurchasedCartItems()
     } catch (e) {
-      // 清空购物车失败不影响支付结果
+      // 移除购物车项失败不影响支付结果
     }
 
     ElMessage.success('支付成功！')

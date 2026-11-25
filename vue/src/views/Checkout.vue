@@ -65,7 +65,7 @@
 
         <div v-if="addresses.length === 0" class="empty-address">
           <p>暂无收货地址</p>
-          <button class="btn-add" @click="showAddressModal = true">添加收货地址</button>
+          <button class="btn-add" @click="showAddressDialog = true">添加收货地址</button>
         </div>
 
         <div v-else class="address-options">
@@ -284,20 +284,22 @@ const selectAddress = (addr) => {
 
 const loadCartItems = async () => {
   try {
-    // 从URL参数获取选中的购物车ID
-    const idsParam = route.query.ids
+    // 从URL参数获取选中的购物车ID（兼容旧的 cartIds 参数）
+    const idsParam = route.query.ids || route.query.cartIds
     if (idsParam) {
-      selectedCartIds.value = idsParam.split(',').map(id => parseInt(id))
+      selectedCartIds.value = idsParam.split(',').map(id => parseInt(id)).filter(Number.isFinite)
     }
 
     const response = await cartAPI.getCart()
     const allItems = response.data || []
 
-    // 只显示选中的商品
+    // 只显示选中的商品；未指定时默认结算购物车全部商品
     if (selectedCartIds.value.length > 0) {
       cartItems.value = allItems.filter(item => selectedCartIds.value.includes(item.id))
+      selectedCartIds.value = cartItems.value.map(item => item.id)
     } else {
       cartItems.value = allItems
+      selectedCartIds.value = allItems.map(item => item.id)
     }
   } catch (error) {
     console.error('加载购物车失败:', error)

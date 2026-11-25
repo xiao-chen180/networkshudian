@@ -194,7 +194,8 @@ const router = useRouter()
 const route = useRoute()
 
 const book = ref({})
-const quantity = ref(1)
+const queryQuantity = parseInt(route.query.quantity, 10)
+const quantity = ref(Number.isFinite(queryQuantity) && queryQuantity > 0 ? queryQuantity : 1)
 const selectedAddressId = ref(null)
 const addresses = ref([])
 const showAddressDialog = ref(false)
@@ -280,6 +281,9 @@ const loadBook = async () => {
   try {
     const response = await bookAPI.getById(bookId)
     book.value = response.data
+    if (book.value.stock != null && quantity.value > book.value.stock) {
+      quantity.value = Math.max(1, book.value.stock)
+    }
   } catch (error) {
     ElMessage.error('获取书籍信息失败')
     router.push('/books')

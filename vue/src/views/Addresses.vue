@@ -5,7 +5,7 @@
     </div>
 
     <div class="address-container">
-      <div class="add-address-btn" @click="showModal = true">
+      <div class="add-address-btn" @click="openAddModal">
         <span class="add-icon">+</span>
         <span class="add-text">添加新地址</span>
       </div>
@@ -216,6 +216,8 @@ const editAddress = (address) => {
 
 const closeModal = () => {
   showModal.value = false
+  isEditing.value = false
+  editingId.value = null
   resetForm()
 }
 

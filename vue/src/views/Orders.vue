@@ -31,7 +31,7 @@
             <span class="order-total">合计：<strong>¥{{ formatPrice(order.totalPrice) }}</strong></span>
             <div class="order-actions">
               <button v-if="order.status === 'PENDING'" class="action-btn danger" @click="cancelOrder(order.id)">取消</button>
-              <button v-if="order.status === 'PENDING'" class="action-btn primary" @click="payOrder(order.id)">去支付</button>
+              <button v-if="order.status === 'PENDING'" class="action-btn primary" @click="payOrder(order)">去支付</button>
               <button v-if="order.status === 'SHIPPED'" class="action-btn primary" @click="confirmReceive(order.id)">确认收货</button>
             </div>
           </div>
@@ -48,9 +48,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { orderAPI } from '../api'
 import { ElMessage } from 'element-plus'
 
+const router = useRouter()
 const orders = ref([])
 const activeTab = ref('ALL')
 
@@ -87,14 +89,19 @@ const cancelOrder = async (id) => {
   }
 }
 
-const payOrder = async (id) => {
-  try {
-    await orderAPI.updateStatus(id, 'PAID')
-    ElMessage.success('支付成功')
-    loadOrders()
-  } catch (e) {
-    ElMessage.error('支付失败')
-  }
+const payOrder = (order) => {
+  const totalQuantity = (order.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0)
+  const total = Number(order.totalPrice) || 0
+  router.push({
+    path: '/payment',
+    query: {
+      orderId: order.id,
+      totalQuantity,
+      totalPrice: total,
+      shippingFee: 0,
+      finalPrice: total
+    }
+  })
 }
 
 const confirmReceive = async (id) => {
