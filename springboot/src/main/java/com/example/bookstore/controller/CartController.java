@@ -1,9 +1,7 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.CartItemDTO;
-import com.example.bookstore.entity.User;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
+import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.CartService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -22,30 +20,11 @@ public class CartController {
     private static final Logger logger = LoggerFactory.getLogger(CartController.class);
 
     private final CartService cartService;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
-    public CartController(CartService cartService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public CartController(CartService cartService, CurrentUser currentUser) {
         this.cartService = cartService;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
-    }
-
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            try {
-                String account = jwtUtil.extractUsername(token);
-                User user = userRepository.findByAccount(account).orElse(null);
-                if (user != null) {
-                    return user.getId();
-                }
-            } catch (Exception e) {
-                // token invalid
-            }
-        }
-        return null;
+        this.currentUser = currentUser;
     }
 
     @PostMapping("/add")
@@ -53,7 +32,7 @@ public class CartController {
             HttpServletRequest request,
             @RequestParam Long bookId,
             @RequestParam(defaultValue = "1") Integer quantity) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -71,7 +50,7 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<List<CartItemDTO>> getCartItems(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -84,7 +63,7 @@ public class CartController {
             HttpServletRequest request,
             @PathVariable Long cartItemId,
             @RequestBody Map<String, Integer> quantityRequest) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -97,7 +76,7 @@ public class CartController {
     public ResponseEntity<Void> removeFromCart(
             HttpServletRequest request,
             @PathVariable Long cartItemId) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -107,7 +86,7 @@ public class CartController {
 
     @DeleteMapping("/clear")
     public ResponseEntity<Void> clearCart(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

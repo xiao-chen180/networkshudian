@@ -1,9 +1,7 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.PointsLogDTO;
-import com.example.bookstore.entity.User;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
+import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.PointsService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -18,31 +16,16 @@ import java.util.Map;
 public class PointsController {
 
     private final PointsService pointsService;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
-    public PointsController(PointsService pointsService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public PointsController(PointsService pointsService, CurrentUser currentUser) {
         this.pointsService = pointsService;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
-    }
-
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            try {
-                String account = jwtUtil.extractUsername(token);
-                User user = userRepository.findByAccount(account).orElse(null);
-                if (user != null) return user.getId();
-            } catch (Exception e) {}
-        }
-        return null;
+        this.currentUser = currentUser;
     }
 
     @GetMapping
     public ResponseEntity<Map<String, Integer>> getMyPoints(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -52,7 +35,7 @@ public class PointsController {
 
     @GetMapping("/log")
     public ResponseEntity<List<PointsLogDTO>> getPointsLog(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

@@ -3,9 +3,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.OrderDTO;
 import com.example.bookstore.dto.OrderItemDTO;
-import com.example.bookstore.entity.User;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
+import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -21,35 +19,16 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
-    public OrderController(OrderService orderService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public OrderController(OrderService orderService, CurrentUser currentUser) {
         this.orderService = orderService;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
-    }
-
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            try {
-                String account = jwtUtil.extractUsername(token);
-                User user = userRepository.findByAccount(account).orElse(null);
-                if (user != null) {
-                    return user.getId();
-                }
-            } catch (Exception e) {
-                // token invalid
-            }
-        }
-        return null;
+        this.currentUser = currentUser;
     }
 
     @PostMapping
     public ResponseEntity<OrderDTO> createOrder(HttpServletRequest request, @RequestBody Map<String, Object> requestBody) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -77,7 +56,7 @@ public class OrderController {
 
     @PostMapping("/pending")
     public ResponseEntity<OrderDTO> createPendingOrder(HttpServletRequest request, @RequestBody Map<String, Object> requestBody) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -111,7 +90,7 @@ public class OrderController {
 
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getOrdersByUser(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -123,7 +102,7 @@ public class OrderController {
     public ResponseEntity<OrderDTO> getOrderById(
             HttpServletRequest request,
             @PathVariable Long orderId) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -136,7 +115,7 @@ public class OrderController {
             HttpServletRequest request,
             @PathVariable Long orderId,
             @RequestBody Map<String, String> statusRequest) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -149,7 +128,7 @@ public class OrderController {
     public ResponseEntity<Void> deleteOrder(
             HttpServletRequest request,
             @PathVariable Long orderId) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

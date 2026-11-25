@@ -1,9 +1,7 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.NoteDTO;
-import com.example.bookstore.entity.User;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
+import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.NoteService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -18,25 +16,11 @@ import java.util.Map;
 public class NoteController {
 
     private final NoteService noteService;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
-    public NoteController(NoteService noteService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public NoteController(NoteService noteService, CurrentUser currentUser) {
         this.noteService = noteService;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
-    }
-
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            try {
-                String account = jwtUtil.extractUsername(authorization.substring(7));
-                User user = userRepository.findByAccount(account).orElse(null);
-                if (user != null) return user.getId();
-            } catch (Exception e) {}
-        }
-        return null;
+        this.currentUser = currentUser;
     }
 
     @GetMapping("/book/{bookId}")
@@ -46,14 +30,14 @@ public class NoteController {
 
     @GetMapping("/my")
     public ResponseEntity<List<NoteDTO>> getMyNotes(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         return ResponseEntity.ok(noteService.getMyNotes(userId));
     }
 
     @PostMapping
     public ResponseEntity<NoteDTO> create(HttpServletRequest request, @RequestBody Map<String, Object> body) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         Long bookId = Long.valueOf(body.get("bookId").toString());
         String title = body.get("title") != null ? body.get("title").toString() : "";
@@ -64,14 +48,14 @@ public class NoteController {
 
     @PutMapping("/{id}")
     public ResponseEntity<NoteDTO> update(HttpServletRequest request, @PathVariable Long id, @RequestBody Map<String, String> body) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         return ResponseEntity.ok(noteService.updateNote(userId, id, body.get("title"), body.get("content")));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(HttpServletRequest request, @PathVariable Long id) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         noteService.deleteNote(userId, id);
         return ResponseEntity.noContent().build();

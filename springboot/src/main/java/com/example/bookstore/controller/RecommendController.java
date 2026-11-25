@@ -2,11 +2,7 @@ package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.BookDTO;
 import com.example.bookstore.entity.Book;
-import com.example.bookstore.entity.User;
 import com.example.bookstore.repository.BookRepository;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,13 +14,9 @@ import java.util.stream.Collectors;
 public class RecommendController {
 
     private final BookRepository bookRepository;
-    private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
 
-    public RecommendController(BookRepository bookRepository, UserRepository userRepository, JwtUtil jwtUtil) {
+    public RecommendController(BookRepository bookRepository) {
         this.bookRepository = bookRepository;
-        this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping("/guess-you-like")

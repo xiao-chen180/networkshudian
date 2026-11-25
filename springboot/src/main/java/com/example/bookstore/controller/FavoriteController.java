@@ -1,9 +1,7 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.FavoriteDTO;
-import com.example.bookstore.entity.User;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
+import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.FavoriteService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -18,31 +16,16 @@ import java.util.Map;
 public class FavoriteController {
 
     private final FavoriteService favoriteService;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
-    public FavoriteController(FavoriteService favoriteService, JwtUtil jwtUtil, UserRepository userRepository) {
+    public FavoriteController(FavoriteService favoriteService, CurrentUser currentUser) {
         this.favoriteService = favoriteService;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
-    }
-
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            try {
-                String account = jwtUtil.extractUsername(token);
-                User user = userRepository.findByAccount(account).orElse(null);
-                if (user != null) return user.getId();
-            } catch (Exception e) {}
-        }
-        return null;
+        this.currentUser = currentUser;
     }
 
     @GetMapping
     public ResponseEntity<List<FavoriteDTO>> getMyFavorites(HttpServletRequest request) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -54,7 +37,7 @@ public class FavoriteController {
     public ResponseEntity<Map<String, Boolean>> checkFavorite(
             HttpServletRequest request,
             @PathVariable Long bookId) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -66,7 +49,7 @@ public class FavoriteController {
     public ResponseEntity<FavoriteDTO> addFavorite(
             HttpServletRequest request,
             @PathVariable Long bookId) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -78,7 +61,7 @@ public class FavoriteController {
     public ResponseEntity<Void> removeFavorite(
             HttpServletRequest request,
             @PathVariable Long bookId) {
-        Long userId = getUserIdFromRequest(request);
+        Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

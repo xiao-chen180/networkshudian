@@ -1,9 +1,7 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.BookDTO;
-import com.example.bookstore.entity.User;
-import com.example.bookstore.repository.UserRepository;
-import com.example.bookstore.security.JwtUtil;
+import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.AdminService;
 import com.example.bookstore.service.BookService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,30 +18,17 @@ public class AdminController {
 
     private final AdminService adminService;
     private final BookService bookService;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final CurrentUser currentUser;
 
     public AdminController(AdminService adminService, BookService bookService,
-                           JwtUtil jwtUtil, UserRepository userRepository) {
+                           CurrentUser currentUser) {
         this.adminService = adminService;
         this.bookService = bookService;
-        this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
+        this.currentUser = currentUser;
     }
 
     private boolean isAdmin(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            String token = authorization.substring(7);
-            try {
-                String account = jwtUtil.extractUsername(token);
-                User user = userRepository.findByAccount(account).orElse(null);
-                return user != null && "ADMIN".equals(user.getRole());
-            } catch (Exception e) {
-                return false;
-            }
-        }
-        return false;
+        return currentUser.isAdmin();
     }
 
     private ResponseEntity<?> forbiddenIfNotAdmin(HttpServletRequest request) {
