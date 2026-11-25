@@ -53,7 +53,10 @@
 .btn-gold { background: var(--color-gold); color: #14150f; font-weight: 500; }
 .btn-gold:hover:not(:disabled) { opacity: .88; }
 .btn-line:hover:not(:disabled) { background: var(--color-gold-soft); }
-.btn-gold:disabled, .btn-line:disabled { opacity: .35; cursor: not-allowed; }
+.btn-gold:disabled, .btn-line:disabled {
+  background: var(--color-surface-3); border-color: var(--color-line-strong);
+  color: var(--color-ink-faint); cursor: not-allowed;
+}
 .btn-line.sm, .btn-gold.sm { height: 32px; padding: 0 14px; font-size: 10.5px; }
 
 /* 数字 */

@@ -80,7 +80,11 @@ const couponDiscount = ref(0)
 const address = ref('')
 const paymentMethod = ref('alipay')
 
-const canPay = computed(() => finalPrice.value >= 0 && (route.query.ids || route.query.bookId))
+/* 购物车结算 / 立即购买 / 订单列表去支付 三种入口都允许进入支付 */
+const canPay = computed(() => {
+  const q = route.query
+  return Boolean(q.orderId || q.ids || q.bookId)
+})
 const fmt = (n) => Number(n || 0).toFixed(2)
 
 onMounted(() => {
@@ -88,7 +92,7 @@ onMounted(() => {
   totalQuantity.value = parseInt(q.totalQuantity) || 0
   totalPrice.value = parseFloat(q.totalPrice) || 0
   shippingFee.value = parseFloat(q.shippingFee) || 0
-  finalPrice.value = parseFloat(q.finalPrice) || 0
+  finalPrice.value = parseFloat(q.finalPrice) || parseFloat(q.totalPrice) || 0
   couponDiscount.value = parseFloat(q.couponDiscount) || 0
   address.value = q.address || ''
 })

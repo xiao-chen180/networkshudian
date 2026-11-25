@@ -15,9 +15,16 @@
           </div>
         </div>
         <div class="hero-visual">
-          <div class="hero-cover">
-            <BookCover title="夜航西飞" author="柏瑞尔·马卡姆" />
-          </div>
+          <router-link :to="heroBook.id ? `/books/${heroBook.id}` : '/books'" class="hero-cover">
+            <BookCover
+              :src="heroBook.imageUrl"
+              :title="heroBook.name || '夜航西飞'"
+              :author="heroBook.author || '柏瑞尔·马卡姆'"
+            />
+            <span class="hero-tag" v-if="heroBook.id">
+              本周主推 · ¥{{ formatPrice(heroBook.price) }}
+            </span>
+          </router-link>
         </div>
       </div>
     </section>
@@ -142,6 +149,8 @@ const salesRanking = ref([])
 const recommendBooks = ref([])
 
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+/* 首屏主推：优先用真实数据的第一本新书 */
+const heroBook = computed(() => hotBooks.value[0] || {})
 
 const pad = (n) => String(n).padStart(2, '0')
 const formatPrice = (p) => (typeof p === 'string' ? p : Number(p).toFixed(2))
@@ -179,7 +188,7 @@ onMounted(async () => {
 .home { min-height: 100vh; }
 
 /* ---- Hero ---- */
-.hero { padding: 80px 0; position: relative; overflow: hidden; }
+.hero { padding: 64px 0 40px; position: relative; overflow: hidden; }
 .hero::before {
   content: ""; position: absolute; left: 50%; top: -280px; width: 1000px; height: 700px;
   transform: translateX(-35%);
@@ -204,30 +213,46 @@ h1 em { font-style: normal; color: var(--color-gold); }
 .btn-fill { background: var(--color-gold); color: #14150f; font-weight: 500; }
 .link-line { font-size: 12px; letter-spacing: .1em; color: var(--color-ink-soft); border-bottom: 1px solid var(--color-line-strong); padding-bottom: 3px; }
 
-.hero-visual { width: 480px; flex: none; position: relative; }
-.hero-cover { width: 280px; margin-left: 100px; position: relative; }
+.hero-visual { width: 480px; flex: none; position: relative; padding-bottom: 46px; }
+.hero-cover { width: 280px; margin-left: 100px; position: relative; display: block; }
 .hero-cover::before {
   content: ""; position: absolute; left: 16px; top: 14px; width: 100%; height: 100%;
   border: 1px solid rgba(211,174,106,.42); transform: rotate(-1.5deg); pointer-events: none;
 }
+.hero-note { display: none; }
+.hero-tag {
+  position: absolute; left: 0; bottom: -52px; white-space: nowrap;
+  border: 1px solid var(--color-gold-line); color: var(--color-gold);
+  font-size: 10px; letter-spacing: .1em; padding: 5px 10px; background: var(--color-bg);
+}
 
 /* ---- 运营 Banner ---- */
-.banner-sec { padding: 36px 0 0; }
+.banner-sec { padding: 24px 0 0; }
 .banner {
-  display: flex; align-items: center; gap: 30px; border: 1px solid var(--color-gold-line);
+  display: flex; align-items: center; gap: 34px; border: 1px solid var(--color-gold-line);
   background:
     radial-gradient(120% 140% at 0% 0%, rgba(211,174,106,.12), transparent 62%),
     var(--color-surface);
-  padding: 26px 30px; cursor: pointer;
+  padding: 26px 30px; cursor: pointer; max-height: 200px; overflow: hidden;
 }
 .banner:hover { background: rgba(211,174,106,.06); }
-.b-left { flex: 1; }
+.b-left { flex: 1; min-width: 0; }
 .b-k { font-size: 8.5px; letter-spacing: .3em; color: var(--color-gold); }
-.b-left b { display: block; margin-top: 12px; font-family: var(--font-display); font-size: 24px; font-weight: 400; letter-spacing: .1em; }
-.b-left p { margin-top: 10px; font-size: 11.5px; color: var(--color-ink-muted); line-height: 1.9; letter-spacing: .04em; }
-.b-cta { display: inline-block; margin-top: 16px; font-size: 10.5px; letter-spacing: .12em; color: var(--color-gold); border-bottom: 1px solid var(--color-gold-line); padding-bottom: 3px; }
-.b-right { width: 200px; flex: none; }
-.b-right img { width: 100%; height: 120px; object-fit: cover; border: 1px solid var(--color-line); }
+.b-left b {
+  display: block; margin-top: 10px; font-family: var(--font-display); font-size: 22px;
+  font-weight: 400; letter-spacing: .1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.b-left p {
+  margin-top: 8px; font-size: 11px; color: var(--color-ink-muted); line-height: 1.8; letter-spacing: .04em;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.b-cta { display: inline-block; margin-top: 14px; font-size: 10.5px; letter-spacing: .12em; color: var(--color-gold); border-bottom: 1px solid var(--color-gold-line); padding-bottom: 3px; }
+.b-right { width: 260px; height: 132px; flex: none; overflow: hidden; position: relative; }
+.b-right img { width: 100%; height: 100%; object-fit: cover; border: 1px solid var(--color-line); filter: saturate(.75) brightness(.9); }
+.b-right::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(12,13,16,.55), rgba(12,13,16,0) 45%);
+}
 
 /* ---- 分类 ---- */
 .cats { border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); background: var(--color-surface); margin-top: 36px; }

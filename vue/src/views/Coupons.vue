@@ -19,13 +19,15 @@
         <div class="clist" v-if="available.length">
           <div class="ticket" v-for="c in available" :key="c.id">
             <div class="left">
-              <b><i>¥</i>{{ c.type === 'PERCENT' ? c.value : c.value }}</b>
-              <span v-if="Number(c.minAmount) > 0">满 {{ c.minAmount }} 可用</span>
-              <span v-else>无门槛</span>
+              <b v-if="!isPercent(c)"><i>¥</i>{{ Number(c.value).toFixed(0) }}</b>
+              <b v-else class="pct">{{ percentText(c) }}<i>折</i></b>
+              <span>{{ thresholdText(c) }}</span>
             </div>
             <div class="right">
-              <div class="t">{{ c.name }}</div>
-              <div class="d">有效期至 {{ fmtDate(c.endTime) }} · 剩余 {{ c.remainNum ?? '—' }} 张</div>
+              <div class="text">
+                <div class="t">{{ c.name }}</div>
+                <div class="d">有效期至 {{ fmtDate(c.endTime) }} · 剩余 {{ c.remainNum ?? '—' }} 张</div>
+              </div>
               <button class="btn-line sm" :disabled="Number(c.remainNum) <= 0" @click="claim(c.id)">
                 {{ Number(c.remainNum) > 0 ? '领取' : '已领完' }}
               </button>
@@ -38,15 +40,19 @@
       <!-- 我的券 -->
       <div v-else>
         <div class="clist" v-if="mine.length">
-          <div class="ticket" v-for="c in mine" :key="c.id" :class="{ used: c.status === 'USED' }">
+          <div class="ticket" v-for="c in mine" :key="c.id" :class="{ used: c.status !== 'UNUSED' }">
             <div class="left">
-              <b><i>¥</i>{{ c.value }}</b>
-              <span>{{ Number(c.minAmount) > 0 ? `满 ${c.minAmount} 可用` : '无门槛' }}</span>
+              <b v-if="!isPercent(c)"><i>¥</i>{{ Number(c.value).toFixed(0) }}</b>
+              <b v-else class="pct">{{ percentText(c) }}<i>折</i></b>
+              <span>{{ thresholdText(c) }}</span>
             </div>
             <div class="right">
-              <div class="t">{{ c.couponName }}</div>
-              <div class="d">有效期至 {{ fmtDate(c.endTime) }}</div>
+              <div class="text">
+                <div class="t">{{ c.couponName }}</div>
+                <div class="d">有效期至 {{ fmtDate(c.endTime) }}</div>
+              </div>
               <span class="tag" :class="{ gold: c.status === 'UNUSED' }">{{ statusText(c.status) }}</span>
+              <router-link v-if="c.status === 'UNUSED'" to="/books" class="btn-line sm">去使用</router-link>
             </div>
           </div>
         </div>
@@ -65,6 +71,13 @@ const tab = ref('available')
 const available = ref([])
 const mine = ref([])
 
+const isPercent = (c) => c.type === 'PERCENT'
+/* 后端 PERCENT 的 value 表示减免百分比：20 → 减 20% → 8 折 */
+const percentText = (c) => {
+  const n = (100 - Number(c.value)) / 10
+  return Number.isFinite(n) ? n.toFixed(1).replace('.0', '') : '—'
+}
+const thresholdText = (c) => (Number(c.minAmount) > 0 ? `满 ${Number(c.minAmount).toFixed(0)} 元可用` : '无门槛')
 const fmtDate = (t) => (t ? new Date(t).toLocaleDateString('zh-CN') : '—')
 const statusText = (s) => ({ UNUSED: '未使用', USED: '已使用', EXPIRED: '已过期' }[s] || s)
 
@@ -90,20 +103,32 @@ onMounted(load)
 </script>
 
 <style scoped>
-.clist { display: flex; flex-direction: column; gap: 12px; }
+.clist { display: flex; flex-direction: column; gap: 10px; }
+
 .ticket {
   display: flex; border: 1px solid var(--color-line); background: var(--color-surface);
+  min-height: 92px;
 }
 .ticket.used { opacity: .55; }
+
 .left {
-  width: 168px; flex: none; padding: 22px 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 6px;
+  width: 150px; flex: none; padding: 16px 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   border-right: 1px dashed var(--color-line-strong);
 }
-.left b { font-family: var(--font-display); font-size: 30px; font-weight: 400; color: var(--color-gold); }
+.left b { font-family: var(--font-display); font-size: 30px; font-weight: 400; color: var(--color-gold); line-height: 1; }
 .left b i { font-style: normal; font-size: 13px; margin-right: 2px; }
-.left span { font-size: 10px; color: var(--color-ink-faint); letter-spacing: .06em; }
-.right { flex: 1; padding: 18px 22px; display: flex; align-items: center; gap: 20px; }
+.left b.pct { font-size: 26px; }
+.left b.pct i { font-size: 12px; margin-left: 3px; }
+.left span { font-size: 10px; color: var(--color-ink-faint); letter-spacing: .04em; }
+
+.right { flex: 1; min-width: 0; padding: 14px 20px; display: flex; align-items: center; gap: 16px; }
+.right .text { flex: 1; min-width: 0; }
 .right .t { font-family: var(--font-display); font-size: 14px; letter-spacing: .06em; }
-.right .d { font-size: 10px; color: var(--color-ink-faint); letter-spacing: .05em; margin-right: auto; }
+.right .d { margin-top: 6px; font-size: 10px; color: var(--color-ink-faint); letter-spacing: .04em; }
+
+@media (max-width: 767px) {
+  .left { width: 110px; }
+  .right { padding: 12px 14px; flex-wrap: wrap; }
+}
 </style>

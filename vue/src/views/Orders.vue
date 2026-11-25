@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="orders-page">
     <div class="wrap">
       <div class="pagehead">
@@ -31,24 +31,31 @@
                 <BookCover :src="item.imageUrl || item.bookImageUrl" :title="item.bookName" class="oi-cover" compact ratio="3:4" />
                 <div class="oi-meta">
                   <b>{{ item.bookName }}</b>
-                  <span>{{ item.bookAuthor || item.author || '书香阁' }}</span>
+                  <span>{{ item.author || item.bookAuthor || '书香阁' }}</span>
                   <span class="qty">× {{ item.quantity }}</span>
                 </div>
                 <div class="oi-price">¥{{ formatPrice(item.price) }}</div>
               </div>
             </div>
             <div class="ototal">
-              <div class="l">实付金额</div>
+              <div class="l">{{ amountLabel(order) }}</div>
               <div class="v">¥{{ formatPrice(order.totalPrice) }}</div>
               <div class="n">共 {{ totalQty(order) }} 件</div>
+              <div class="n" v-if="Number(order.couponDiscount) > 0">券抵 ¥{{ formatPrice(order.couponDiscount) }}</div>
             </div>
           </div>
 
           <div class="order-f">
-            <span class="hint">{{ hintOf(order) }}</span>
+            <span class="hint" :class="{ urgent: order.status === 'PENDING' && remainMs(order) > 0, expired: order.status === 'PENDING' && remainMs(order) === 0 }">
+              {{ footerHint(order) }}
+            </span>
             <div class="acts">
-              <button class="obtn" v-if="order.status === 'PENDING'" @click="cancelOrder(order.id)">取消订单</button>
-              <button class="obtn gold" v-if="order.status === 'PENDING'" @click="payOrder(order)">去支付</button>
+              <template v-if="order.status === 'PENDING'">
+                <span class="expired-note" v-if="remainMs(order) === 0">已超时</span>
+                <button class="obtn" @click="cancelOrder(order.id)">取消订单</button>
+                <button class="obtn gold" v-if="remainMs(order) > 0" @click="payOrder(order)">去支付</button>
+                <button class="obtn gold" v-else @click="goBook(order.items?.[0]?.bookId)">重新下单</button>
+              </template>
               <button class="obtn gold" v-if="order.status === 'SHIPPED'" @click="confirmReceive(order.id)">确认收货</button>
               <button class="obtn gold" v-if="order.status === 'COMPLETED'" @click="goBook(order.items?.[0]?.bookId)">再次购买</button>
               <button class="obtn" v-if="order.status === 'COMPLETED'">申请退换</button>
@@ -70,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { orderAPI } from '../api'
 import { ElMessage } from 'element-plus'
@@ -81,6 +88,8 @@ import EmptyState from '../components/common/EmptyState.vue'
 const router = useRouter()
 const orders = ref([])
 const activeTab = ref('ALL')
+const now = ref(Date.now())
+let timer = null
 
 const tabs = [
   { key: 'ALL', label: '全部' },
@@ -110,6 +119,35 @@ const hintOf = (o) => {
     CANCELLED: '订单已取消'
   }
   return map[o.status] || ''
+}
+
+/* 待付款订单的 30 分钟支付倒计时 */
+const PAY_WINDOW = 30 * 60 * 1000
+const remainMs = (o) => {
+  if (o.status !== 'PENDING' || !o.createdAt) return 0
+  return Math.max(0, new Date(o.createdAt).getTime() + PAY_WINDOW - now.value)
+}
+const remainText = (o) => {
+  const ms = remainMs(o)
+  const m = String(Math.floor(ms / 60000)).padStart(2, '0')
+  const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0')
+  return `${m}:${s}`
+}
+const footerHint = (o) => {
+  if (o.status === 'PENDING') {
+    if (!o.createdAt) return hintOf(o)
+    return remainMs(o) > 0
+      ? `${remainText(o)} 后自动取消并释放库存`
+      : '支付已超时，订单即将自动取消'
+  }
+  return hintOf(o)
+}
+
+/* 金额标签：未支付叫应付，已取消叫订单金额，其余为实付 */
+const amountLabel = (o) => {
+  if (o.status === 'PENDING') return '应付金额'
+  if (o.status === 'CANCELLED') return '订单金额'
+  return '实付金额'
 }
 
 async function loadOrders() {
@@ -147,7 +185,11 @@ async function confirmReceive(id) {
 
 const goBook = (id) => id && router.push(`/books/${id}`)
 
-onMounted(loadOrders)
+onMounted(() => {
+  loadOrders()
+  timer = setInterval(() => { now.value = Date.now() }, 1000)
+})
+onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
@@ -190,6 +232,8 @@ h1 { margin-top: 14px; font-family: var(--font-display); font-size: var(--fs-h1)
 
 .order-f { display: flex; align-items: center; padding: 12px 20px; border-top: 1px solid var(--color-line); }
 .hint { font-size: 9.5px; color: var(--color-ink-faint); letter-spacing: .06em; }
+.hint.urgent { color: var(--color-gold); font-variant-numeric: tabular-nums; }
+.hint.expired { color: var(--color-danger); }
 .acts { margin-left: auto; display: flex; gap: 8px; }
 
 .obtn {
@@ -199,6 +243,7 @@ h1 { margin-top: 14px; font-family: var(--font-display); font-size: var(--fs-h1)
 .obtn:hover { color: var(--color-ink); border-color: var(--color-ink-muted); }
 .obtn.gold { border-color: var(--color-gold-line); color: var(--color-gold); }
 .obtn.gold:hover { background: var(--color-gold-soft); }
+.expired-note { font-size: 9.5px; letter-spacing: .08em; color: var(--color-danger); margin-right: 4px; }
 
 @media (max-width: 767px) {
   .order-b { flex-direction: column; }

@@ -27,8 +27,9 @@
               <span>已连续签到</span>
               <b class="mono">{{ consecutiveDays }}<i>天</i></b>
             </div>
+            <div class="ck-note">连续 7 天解锁签到抽奖</div>
             <button class="ck-btn" :disabled="todayChecked" @click="doCheckIn">
-              {{ todayChecked ? '今日已签到' : '立即签到 +10 积分' }}
+              {{ todayChecked ? '今日已签到 · +10 积分' : '立即签到 +10 积分' }}
             </button>
           </div>
         </aside>
@@ -268,6 +269,7 @@ onMounted(loadAll)
 .ck-top span { font-size: 10px; letter-spacing: .14em; color: var(--color-ink-faint); }
 .ck-top b { font-family: var(--font-display); font-size: 24px; color: var(--color-gold); font-weight: 400; }
 .ck-top b i { font-style: normal; font-size: 11px; color: var(--color-ink-muted); margin-left: 3px; }
+.ck-note { margin-top: 6px; font-size: 9.5px; color: var(--color-ink-faint); letter-spacing: .05em; }
 .ck-btn {
   width: 100%; height: 34px; margin-top: 14px; border: 1px solid var(--color-gold);
   background: var(--color-gold); color: #14150f; font-family: inherit; font-size: 11px; letter-spacing: .12em; cursor: pointer;

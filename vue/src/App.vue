@@ -59,9 +59,25 @@
             <b>书香阁</b>
             <p>学习与实训示例项目 · Spring Boot 3 + Vue 3 前后端分离。<br>图书信息、评分与价格均为演示数据。</p>
           </div>
-          <div class="fcol"><h5>逛书店</h5><a href="#">全部图书</a><a href="#">排行榜</a><a href="#">新书速递</a></div>
-          <div class="fcol"><h5>我的</h5><a href="#">订单中心</a><a href="#">收藏与笔记</a><a href="#">优惠券</a></div>
-          <div class="fcol"><h5>帮助</h5><a href="#">配送与退换</a><a href="#">支付方式</a><a href="#">联系客服</a></div>
+          <div class="fcol">
+            <h5>逛书店</h5>
+            <router-link to="/books">全部图书</router-link>
+            <router-link to="/rankings">排行榜</router-link>
+            <router-link to="/search">搜索</router-link>
+          </div>
+          <div class="fcol">
+            <h5>我的</h5>
+            <router-link to="/orders">订单中心</router-link>
+            <router-link to="/favorites">收藏</router-link>
+            <router-link to="/notes">读书笔记</router-link>
+            <router-link to="/coupons">优惠券</router-link>
+          </div>
+          <div class="fcol">
+            <h5>帮助</h5>
+            <span>配送：48 小时内发货</span>
+            <span>退换：7 天无理由</span>
+            <span>支付：支付宝 / 微信（演示）</span>
+          </div>
         </div>
         <div class="fbar"><span>© 2026 书香阁 BOOKSTORE</span><span>深夜书房</span></div>
       </div>
@@ -154,6 +170,8 @@ html, body { height: 100%; }
 .fbrand b { font-family: var(--font-display); font-size: 18px; letter-spacing: .3em; font-weight: 500; }
 .fbrand p { margin-top: 14px; font-size: 11px; line-height: 1.9; color: var(--color-ink-muted); letter-spacing: .04em; }
 .fcol h5 { font-size: 10px; letter-spacing: .22em; color: var(--color-gold); margin-bottom: 14px; font-weight: 400; }
-.fcol a { display: block; font-size: 11px; color: var(--color-ink-muted); line-height: 2.1; letter-spacing: .05em; }
+.fcol a, .fcol span { display: block; font-size: 11px; color: var(--color-ink-muted); line-height: 2.1; letter-spacing: .05em; }
+.fcol a:hover { color: var(--color-gold); }
+.fcol span { color: var(--color-ink-faint); }
 .fbar { display: flex; justify-content: space-between; margin-top: 38px; padding-top: 18px; border-top: 1px solid var(--color-line); font-size: 10px; color: var(--color-ink-faint); letter-spacing: .1em; }
 </style>

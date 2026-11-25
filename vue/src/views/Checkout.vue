@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="checkout-page">
     <div class="wrap">
       <div class="crumb"><router-link to="/">首页</router-link><i>/</i><router-link to="/cart">购物袋</router-link><i>/</i><span>结算</span></div>
@@ -96,8 +96,9 @@
                 @click="toggleCoupon(c)"
               >
                 <span class="pick">{{ selectedCouponId === c.id ? '已选' : '可选' }}</span>
-                <b><i>¥</i>{{ couponValue(c) }}</b>
-                <div class="c">{{ couponLabel(c) }}</div>
+                <b v-if="!isPercent(c)"><i>¥</i>{{ Number(c.value).toFixed(0) }}</b>
+                <b v-else class="pct">{{ percentText(c) }}<i>折</i></b>
+                <div class="c">{{ thresholdText(c) }}</div>
                 <div class="d">有效期至 {{ formatDate(c.endTime) }}</div>
               </div>
               <div class="coupon none" :class="{ on: !selectedCouponId }" @click="clearCoupon">不使用优惠券</div>
@@ -135,7 +136,9 @@
 
           <div class="savebox" v-if="totalSaved > 0">
             <b>这一单省了 ¥{{ fmt(totalSaved) }}</b>
-            <span>会员折扣 {{ fmt(memberDiscount) }} 元 + 优惠券 {{ fmt(couponDiscount) }} 元。</span>
+            <span>
+              会员折扣 {{ fmt(memberDiscount) }} 元<template v-if="couponDiscount > 0"> + 优惠券 {{ fmt(couponDiscount) }} 元</template>。
+            </span>
           </div>
 
           <div class="panel side-panel">
@@ -277,15 +280,13 @@ const finalPrice = computed(() => Math.max(0, discountedTotal.value - toNum(coup
 const totalSaved = computed(() => memberDiscount.value + toNum(couponDiscount.value) + (shippingFee.value === 0 ? 10 : 0))
 const canSubmit = computed(() => !!selectedAddress.value && cartItems.value.length > 0)
 
-const couponValue = (c) => {
-  const v = toNum(c.value)
-  return c.type === 'PERCENT' ? `${v}%` : v.toFixed(0)
+const isPercent = (c) => c.type === 'PERCENT'
+/* 后端 PERCENT 的 value 表示减免百分比：20 → 减 20% → 8 折 */
+const percentText = (c) => {
+  const n = (100 - Number(c.value)) / 10
+  return Number.isFinite(n) ? n.toFixed(1).replace('.0', '') : '—'
 }
-const couponLabel = (c) => {
-  const min = toNum(c.minAmount)
-  if (c.type === 'PERCENT') return `满 ${min.toFixed(0)} 元可用 · 折扣券`
-  return `满 ${min.toFixed(0)} 元可用 · 全场图书`
-}
+const thresholdText = (c) => (Number(c.minAmount) > 0 ? `满 ${Number(c.minAmount).toFixed(0)} 元可用` : '无门槛')
 const usableCoupons = computed(() =>
   coupons.value.filter(c => toNum(c.minAmount) <= discountedTotal.value)
 )
@@ -469,18 +470,25 @@ h1 { font-family: var(--font-display); font-size: var(--fs-h1); font-weight: 400
 .opt em { font-style: normal; font-size: 10.5px; color: var(--color-gold); }
 
 /* 优惠券 */
-.coupons { display: flex; gap: 10px; flex-wrap: wrap; }
+.coupons { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
 .coupon {
-  width: 190px; border: 1px solid var(--color-line); padding: 13px 14px; position: relative; cursor: pointer;
+  width: 196px; height: 104px; border: 1px solid var(--color-line); padding: 14px 15px;
+  position: relative; cursor: pointer; display: flex; flex-direction: column; justify-content: center;
 }
 .coupon.on { border-color: var(--color-gold-line); background: rgba(211,174,106,.06); }
-.coupon b { font-family: var(--font-display); font-size: 20px; color: var(--color-gold); font-weight: 400; }
+.coupon b { font-family: var(--font-display); font-size: 22px; color: var(--color-gold); font-weight: 400; line-height: 1.1; }
 .coupon b i { font-style: normal; font-size: 11px; margin-right: 2px; }
-.coupon .c { margin-top: 5px; font-size: 10px; color: var(--color-ink-muted); letter-spacing: .04em; }
-.coupon .d { margin-top: 8px; font-size: 9px; color: var(--color-ink-faint); }
+.coupon b.pct { font-size: 20px; }
+.coupon b.pct i { font-size: 10px; margin-left: 3px; margin-right: 0; }
+.coupon .c { margin-top: 7px; font-size: 10px; color: var(--color-ink-muted); letter-spacing: .04em; }
+.coupon .d { margin-top: 6px; font-size: 9px; color: var(--color-ink-faint); }
 .coupon .pick { position: absolute; right: 10px; top: 10px; font-size: 9px; color: var(--color-ink-faint); letter-spacing: .1em; }
 .coupon.on .pick { color: var(--color-gold); }
-.coupon.none { display: flex; align-items: center; justify-content: center; font-size: 10.5px; color: var(--color-ink-faint); }
+.coupon.none {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10.5px; color: var(--color-ink-faint); text-align: center;
+}
+.coupon.none.on { color: var(--color-ink-soft); border-color: var(--color-line-strong); background: transparent; }
 .coupon-hint { margin-top: 12px; font-size: 10.5px; color: var(--color-ink-faint); }
 .coupon-hint a { color: var(--color-gold); }
 

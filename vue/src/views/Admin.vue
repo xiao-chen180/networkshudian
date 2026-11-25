@@ -243,19 +243,20 @@
 
           <div class="panel">
             <table class="tbl">
-              <thead><tr><th style="width:60px">头像</th><th>昵称 / 账号</th><th style="width:90px">角色</th><th style="width:90px">会员折扣</th><th style="width:120px">操作</th></tr></thead>
+              <thead><tr><th style="width:60px">头像</th><th>昵称 / 账号</th><th style="width:80px">角色</th><th style="width:80px">折扣</th><th style="width:70px">订单</th><th style="width:120px">操作</th></tr></thead>
               <tbody>
                 <tr v-for="u in users" :key="u.id">
                   <td><span class="uav">{{ (u.username || u.account || '读').charAt(0) }}</span></td>
                   <td><span class="tt">{{ u.username || '未命名' }}</span><span class="ts">{{ u.account }}</span></td>
                   <td><span class="tag" :class="{ gold: u.role === 'ADMIN' }">{{ u.role }}</span></td>
                   <td class="mono">{{ u.discount ? `${(Number(u.discount) * 10).toFixed(1).replace('.0', '')} 折` : '—' }}</td>
+                  <td class="mono">{{ u.orderCount ?? 0 }}</td>
                   <td>
                     <button class="tbtn" v-if="u.role !== 'ADMIN'" @click="setRole(u, 'ADMIN')">设为管理员</button>
                     <button class="tbtn plain" v-else @click="setRole(u, 'USER')">取消管理员</button>
                   </td>
                 </tr>
-                <tr v-if="!users.length"><td colspan="5" class="blank">暂无用户</td></tr>
+                <tr v-if="!users.length"><td colspan="6" class="blank">暂无用户</td></tr>
               </tbody>
             </table>
           </div>
