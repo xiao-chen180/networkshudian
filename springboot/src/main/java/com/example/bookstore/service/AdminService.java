@@ -1,5 +1,7 @@
 package com.example.bookstore.service;
 
+import com.example.bookstore.common.OrderStatus;
+import com.example.bookstore.common.UserRole;
 import com.example.bookstore.entity.Book;
 import com.example.bookstore.entity.Order;
 import com.example.bookstore.entity.OrderItem;
@@ -37,17 +39,17 @@ public class AdminService {
         List<Order> orders = orderRepository.findAll();
         List<Book> books = bookRepository.findAll();
 
-        long totalUsers = users.stream().filter(u -> "USER".equals(u.getRole())).count();
-        long totalAdmins = users.stream().filter(u -> "ADMIN".equals(u.getRole())).count();
+        long totalUsers = users.stream().filter(u -> UserRole.USER.name().equals(u.getRole())).count();
+        long totalAdmins = users.stream().filter(u -> UserRole.ADMIN.name().equals(u.getRole())).count();
         long totalOrders = orders.size();
-        long pendingOrders = orders.stream().filter(o -> "PENDING".equals(o.getStatus())).count();
-        long paidOrders = orders.stream().filter(o -> "PAID".equals(o.getStatus())).count();
-        long shippedOrders = orders.stream().filter(o -> "SHIPPED".equals(o.getStatus())).count();
-        long completedOrders = orders.stream().filter(o -> "COMPLETED".equals(o.getStatus())).count();
-        long cancelledOrders = orders.stream().filter(o -> "CANCELLED".equals(o.getStatus())).count();
+        long pendingOrders = orders.stream().filter(o -> OrderStatus.PENDING.name().equals(o.getStatus())).count();
+        long paidOrders = orders.stream().filter(o -> OrderStatus.PAID.name().equals(o.getStatus())).count();
+        long shippedOrders = orders.stream().filter(o -> OrderStatus.SHIPPED.name().equals(o.getStatus())).count();
+        long completedOrders = orders.stream().filter(o -> OrderStatus.COMPLETED.name().equals(o.getStatus())).count();
+        long cancelledOrders = orders.stream().filter(o -> OrderStatus.CANCELLED.name().equals(o.getStatus())).count();
 
         BigDecimal totalRevenue = orders.stream()
-                .filter(o -> !"CANCELLED".equals(o.getStatus()))
+                .filter(o -> !OrderStatus.CANCELLED.name().equals(o.getStatus()))
                 .map(Order::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -91,7 +93,14 @@ public class AdminService {
     public void updateUserRole(Long userId, String role) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException("用户不存在", HttpStatus.NOT_FOUND.value()));
-        user.setRole(role);
+        if (role == null || role.isBlank()) {
+            throw new CustomException("角色不能为空", HttpStatus.BAD_REQUEST.value());
+        }
+        try {
+            user.setRole(UserRole.valueOf(role.trim().toUpperCase()).name());
+        } catch (IllegalArgumentException e) {
+            throw new CustomException("非法的角色", HttpStatus.BAD_REQUEST.value());
+        }
         userRepository.save(user);
     }
 
@@ -139,7 +148,7 @@ public class AdminService {
     public void shipOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("订单不存在", HttpStatus.NOT_FOUND.value()));
-        if (!"PAID".equals(order.getStatus())) {
+        if (!OrderStatus.PAID.name().equals(order.getStatus())) {
             throw new CustomException("只有已付款的订单才能发货", HttpStatus.BAD_REQUEST.value());
         }
         order.setStatus("SHIPPED");
@@ -150,7 +159,7 @@ public class AdminService {
     public void completeOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("订单不存在", HttpStatus.NOT_FOUND.value()));
-        if (!"SHIPPED".equals(order.getStatus())) {
+        if (!OrderStatus.SHIPPED.name().equals(order.getStatus())) {
             throw new CustomException("只有已发货的订单才能确认完成", HttpStatus.BAD_REQUEST.value());
         }
         order.setStatus("COMPLETED");
@@ -161,14 +170,14 @@ public class AdminService {
     public void adminCancelOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException("订单不存在", HttpStatus.NOT_FOUND.value()));
-        if ("CANCELLED".equals(order.getStatus())) {
+        if (OrderStatus.CANCELLED.name().equals(order.getStatus())) {
             throw new CustomException("订单已被取消", HttpStatus.BAD_REQUEST.value());
         }
-        if ("COMPLETED".equals(order.getStatus())) {
+        if (OrderStatus.COMPLETED.name().equals(order.getStatus())) {
             throw new CustomException("已完成的订单无法取消", HttpStatus.BAD_REQUEST.value());
         }
         // 恢复库存；已支付订单同时回退销量
-        boolean wasPaid = "PAID".equals(order.getStatus());
+        boolean wasPaid = OrderStatus.PAID.name().equals(order.getStatus());
         for (OrderItem item : order.getItems()) {
             Book book = item.getBook();
             book.setStock(book.getStock() + item.getQuantity());

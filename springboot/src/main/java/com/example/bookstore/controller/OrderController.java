@@ -47,10 +47,9 @@ public class OrderController {
             ))
             .toList();
 
-        BigDecimal totalPrice = new BigDecimal(requestBody.get("totalPrice").toString());
         String paymentMethod = (String) requestBody.get("paymentMethod");
 
-        OrderDTO order = orderService.createOrderWithBalance(userId, addressId, orderItems, totalPrice, paymentMethod);
+        OrderDTO order = orderService.createOrderWithBalance(userId, addressId, orderItems, paymentMethod);
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
@@ -77,10 +76,7 @@ public class OrderController {
                 ))
                 .toList();
 
-            BigDecimal totalPrice = requestBody.get("totalPrice") != null ?
-                new BigDecimal(requestBody.get("totalPrice").toString()) : BigDecimal.ZERO;
-
-            OrderDTO order = orderService.createPendingOrderWithItems(userId, shippingAddress, phone, orderItems, totalPrice);
+            OrderDTO order = orderService.createPendingOrderWithItems(userId, shippingAddress, phone, orderItems);
             return ResponseEntity.status(HttpStatus.CREATED).body(order);
         }
 

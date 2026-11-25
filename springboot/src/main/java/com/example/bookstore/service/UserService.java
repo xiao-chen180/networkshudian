@@ -9,6 +9,7 @@ import com.example.bookstore.dto.UserResponse;
 import com.example.bookstore.entity.User;
 import com.example.bookstore.exception.CustomException;
 import com.example.bookstore.repository.UserRepository;
+import com.example.bookstore.common.UserRole;
 import com.example.bookstore.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -63,10 +64,10 @@ public class UserService {
         // 仅在服务端配置了管理员密钥时才允许通过注册创建管理员
         String adminSecret = request.getAdminSecret();
         if (adminSecret != null && !adminSecretKey.isBlank() && adminSecretKey.equals(adminSecret)) {
-            user.setRole("ADMIN");
+            user.setRole(UserRole.ADMIN.name());
             user.setDiscount(BigDecimal.valueOf(1.0));
         } else {
-            user.setRole("USER");
+            user.setRole(UserRole.USER.name());
             user.setDiscount(BigDecimal.valueOf(0.95));
         }
 
