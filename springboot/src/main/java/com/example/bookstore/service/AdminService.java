@@ -73,6 +73,10 @@ public class AdminService {
 
     // ========== 用户管理 ==========
     public List<Map<String, Object>> getAllUsers() {
+        Map<Long, Long> orderCounts = new HashMap<>();
+        for (Object[] row : orderRepository.countGroupedByUser()) {
+            orderCounts.put((Long) row[0], (Long) row[1]);
+        }
         return userRepository.findAll().stream().map(user -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", user.getId());
@@ -83,8 +87,7 @@ public class AdminService {
             map.put("role", user.getRole());
             map.put("discount", user.getDiscount());
             map.put("createdAt", user.getCreatedAt());
-            long orderCount = orderRepository.findByUserId(user.getId()).size();
-            map.put("orderCount", orderCount);
+            map.put("orderCount", orderCounts.getOrDefault(user.getId(), 0L));
             return map;
         }).collect(Collectors.toList());
     }
@@ -117,7 +120,7 @@ public class AdminService {
 
     // ========== 订单管理 ==========
     public List<Map<String, Object>> getAllOrders() {
-        return orderRepository.findAll().stream().map(order -> {
+        return orderRepository.findAllWithDetails().stream().map(order -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", order.getId());
             map.put("userId", order.getUser().getId());

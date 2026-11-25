@@ -1,15 +1,12 @@
 
 package com.example.bookstore.controller;
 
+import com.example.bookstore.common.PageResult;
 import com.example.bookstore.dto.BookDTO;
 import com.example.bookstore.service.BookService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/books")
@@ -22,39 +19,12 @@ public class BookController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllBooks(
+    public ResponseEntity<PageResult<BookDTO>> getAllBooks(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "8") int size) {
-        List<BookDTO> books;
-        if (categoryId != null) {
-            books = bookService.getBooksByCategory(categoryId);
-        } else if (keyword != null && !keyword.isEmpty()) {
-            books = bookService.searchBooks(keyword);
-        } else {
-            books = bookService.getAllBooks();
-        }
-        
-        int totalElements = books.size();
-        int start = page * size;
-        int end = Math.min(start + size, totalElements);
-        
-        List<BookDTO> content;
-        if (start >= totalElements) {
-            content = List.of();
-        } else {
-            content = books.subList(start, end);
-        }
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", content);
-        response.put("totalElements", totalElements);
-        response.put("totalPages", (int) Math.ceil((double) totalElements / size));
-        response.put("number", page);
-        response.put("size", size);
-        
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(bookService.getBooks(categoryId, keyword, page, size));
     }
 
     @GetMapping("/{id}")

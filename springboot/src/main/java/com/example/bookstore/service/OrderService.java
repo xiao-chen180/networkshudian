@@ -229,7 +229,7 @@ public class OrderService {
     }
 
     private Order requireOrder(Long orderId) {
-        return orderRepository.findById(orderId)
+        return orderRepository.findWithItemsById(orderId)
                 .orElseThrow(() -> new CustomException("订单不存在", HttpStatus.NOT_FOUND.value()));
     }
 

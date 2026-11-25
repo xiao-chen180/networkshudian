@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,14 +37,23 @@ public class CouponService {
     }
 
     public List<UserCouponDTO> getUserCoupons(Long userId) {
-        return userCouponRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::convertToUserCouponDTO)
-                .collect(Collectors.toList());
+        return convertAll(userCouponRepository.findByUserIdOrderByCreatedAtDesc(userId));
     }
 
     public List<UserCouponDTO> getUnusedCoupons(Long userId) {
-        return userCouponRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, "UNUSED").stream()
-                .map(this::convertToUserCouponDTO)
+        return convertAll(userCouponRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, "UNUSED"));
+    }
+
+    private List<UserCouponDTO> convertAll(List<UserCoupon> userCoupons) {
+        if (userCoupons.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Coupon> couponMap = couponRepository.findAllById(
+                        userCoupons.stream().map(UserCoupon::getCouponId).collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Coupon::getId, c -> c));
+        return userCoupons.stream()
+                .map(uc -> convertToUserCouponDTO(uc, couponMap.get(uc.getCouponId())))
                 .collect(Collectors.toList());
     }
 
@@ -76,7 +86,7 @@ public class CouponService {
         couponRepository.save(coupon);
 
         UserCoupon saved = userCouponRepository.save(userCoupon);
-        return convertToUserCouponDTO(saved);
+        return convertToUserCouponDTO(saved, coupon);
     }
 
     public BigDecimal calculateDiscount(Long userCouponId, BigDecimal totalAmount) {
@@ -142,21 +152,21 @@ public class CouponService {
         return dto;
     }
 
-    private UserCouponDTO convertToUserCouponDTO(UserCoupon userCoupon) {
+    private UserCouponDTO convertToUserCouponDTO(UserCoupon userCoupon, Coupon coupon) {
         UserCouponDTO dto = new UserCouponDTO();
         dto.setId(userCoupon.getId());
         dto.setCouponId(userCoupon.getCouponId());
         dto.setStatus(userCoupon.getStatus());
         dto.setCreatedAt(userCoupon.getCreatedAt());
 
-        couponRepository.findById(userCoupon.getCouponId()).ifPresent(coupon -> {
+        if (coupon != null) {
             dto.setCouponName(coupon.getName());
             dto.setType(coupon.getType());
             dto.setValue(coupon.getValue());
             dto.setMinAmount(coupon.getMinAmount());
             dto.setStartTime(coupon.getStartTime());
             dto.setEndTime(coupon.getEndTime());
-        });
+        }
 
         return dto;
     }

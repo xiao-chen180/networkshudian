@@ -1,10 +1,11 @@
 package com.example.bookstore.controller;
 
-import com.example.bookstore.entity.Address;
-import com.example.bookstore.service.AddressService;
+import com.example.bookstore.dto.AddressDTO;
+import com.example.bookstore.dto.AddressRequest;
+import com.example.bookstore.mapper.AddressMapper;
 import com.example.bookstore.security.CurrentUser;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.bookstore.service.AddressService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,56 +17,60 @@ import java.util.List;
 public class AddressController {
 
     private final AddressService addressService;
+    private final AddressMapper addressMapper;
     private final CurrentUser currentUser;
 
-    @Autowired
-    public AddressController(AddressService addressService, CurrentUser currentUser) {
+    public AddressController(AddressService addressService, AddressMapper addressMapper,
+                             CurrentUser currentUser) {
         this.addressService = addressService;
+        this.addressMapper = addressMapper;
         this.currentUser = currentUser;
     }
 
     @GetMapping
-    public ResponseEntity<List<Address>> getAllAddresses(HttpServletRequest request) {
+    public ResponseEntity<List<AddressDTO>> getAllAddresses() {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<Address> addresses = addressService.getAddressesByUserId(userId);
+        List<AddressDTO> addresses = addressService.getAddressesByUserId(userId).stream()
+                .map(addressMapper::toDTO)
+                .toList();
         return ResponseEntity.ok(addresses);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Address> getAddressById(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long id) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Address address = addressService.getAddressById(id, userId);
-        return ResponseEntity.ok(address);
+        return ResponseEntity.ok(addressMapper.toDTO(addressService.getAddressById(id, userId)));
     }
 
     @PostMapping
-    public ResponseEntity<Address> createAddress(@RequestBody Address address, HttpServletRequest request) {
+    public ResponseEntity<AddressDTO> createAddress(@Valid @RequestBody AddressRequest request) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Address createdAddress = addressService.createAddress(address, userId);
-        return ResponseEntity.ok(createdAddress);
+        return ResponseEntity.ok(addressMapper.toDTO(
+                addressService.createAddress(addressMapper.toEntity(request), userId)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Address> updateAddress(@PathVariable Long id, @RequestBody Address address, HttpServletRequest request) {
+    public ResponseEntity<AddressDTO> updateAddress(@PathVariable Long id,
+                                                    @Valid @RequestBody AddressRequest request) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Address updatedAddress = addressService.updateAddress(id, address, userId);
-        return ResponseEntity.ok(updatedAddress);
+        return ResponseEntity.ok(addressMapper.toDTO(
+                addressService.updateAddress(id, addressMapper.toEntity(request), userId)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAddress(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<Void> deleteAddress(@PathVariable Long id) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -75,12 +80,11 @@ public class AddressController {
     }
 
     @PostMapping("/{id}/default")
-    public ResponseEntity<Address> setDefaultAddress(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<AddressDTO> setDefaultAddress(@PathVariable Long id) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Address address = addressService.setDefaultAddress(id, userId);
-        return ResponseEntity.ok(address);
+        return ResponseEntity.ok(addressMapper.toDTO(addressService.setDefaultAddress(id, userId)));
     }
 }

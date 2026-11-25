@@ -1,53 +1,87 @@
 
 package com.example.bookstore.service;
 
+import com.example.bookstore.common.PageResult;
 import com.example.bookstore.dto.BookDTO;
 import com.example.bookstore.entity.Book;
 import com.example.bookstore.entity.Category;
 import com.example.bookstore.exception.CustomException;
+import com.example.bookstore.mapper.BookMapper;
 import com.example.bookstore.repository.BookRepository;
 import com.example.bookstore.repository.CategoryRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class BookService {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final BookRepository bookRepository;
     private final CategoryRepository categoryRepository;
+    private final BookMapper bookMapper;
 
-    public BookService(BookRepository bookRepository, CategoryRepository categoryRepository) {
+    public BookService(BookRepository bookRepository, CategoryRepository categoryRepository,
+                       BookMapper bookMapper) {
         this.bookRepository = bookRepository;
         this.categoryRepository = categoryRepository;
+        this.bookMapper = bookMapper;
     }
 
+    @Transactional(readOnly = true)
     public List<BookDTO> getAllBooks() {
         return bookRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .map(bookMapper::toDTO)
+                .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookDTO> getBooksByCategory(Long categoryId) {
         return bookRepository.findByCategoryId(categoryId).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .map(bookMapper::toDTO)
+                .toList();
     }
 
+    /** 数据库分页：按分类 / 关键词 / 全量查询。 */
+    @Transactional(readOnly = true)
+    public PageResult<BookDTO> getBooks(Long categoryId, String keyword, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        Page<Book> result;
+        if (categoryId != null) {
+            result = bookRepository.findByCategoryId(categoryId, pageable);
+        } else if (keyword != null && !keyword.isBlank()) {
+            result = bookRepository.findByNameContainingOrAuthorContainingOrIsbnContaining(
+                    keyword, keyword, keyword, pageable);
+        } else {
+            result = bookRepository.findAll(pageable);
+        }
+        return PageResult.of(result, bookMapper::toDTO);
+    }
+
+    @Transactional(readOnly = true)
     public BookDTO getBookById(Long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new CustomException("书籍不存在", HttpStatus.NOT_FOUND.value()));
-        return convertToDTO(book);
+        return bookMapper.toDTO(book);
     }
 
+    @Transactional(readOnly = true)
     public List<BookDTO> searchBooks(String keyword) {
         return bookRepository.findByNameContainingOrAuthorContainingOrIsbnContaining(keyword, keyword, keyword).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .map(bookMapper::toDTO)
+                .toList();
     }
 
+    @Transactional
     public BookDTO createBook(BookDTO bookDTO) {
         if (bookDTO.getIsbn() != null && bookRepository.existsByIsbn(bookDTO.getIsbn())) {
             throw new CustomException("ISBN已存在", HttpStatus.BAD_REQUEST.value());
@@ -72,9 +106,10 @@ public class BookService {
         }
 
         Book savedBook = bookRepository.save(book);
-        return convertToDTO(savedBook);
+        return bookMapper.toDTO(savedBook);
     }
 
+    @Transactional
     public BookDTO updateBook(Long id, BookDTO bookDTO) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new CustomException("书籍不存在", HttpStatus.NOT_FOUND.value()));
@@ -102,9 +137,10 @@ public class BookService {
         }
 
         Book updatedBook = bookRepository.save(book);
-        return convertToDTO(updatedBook);
+        return bookMapper.toDTO(updatedBook);
     }
 
+    @Transactional
     public void deleteBook(Long id) {
         if (!bookRepository.existsById(id)) {
             throw new CustomException("书籍不存在", HttpStatus.NOT_FOUND.value());
@@ -112,26 +148,4 @@ public class BookService {
         bookRepository.deleteById(id);
     }
 
-    private BookDTO convertToDTO(Book book) {
-        BookDTO dto = new BookDTO();
-        dto.setId(book.getId());
-        dto.setName(book.getName());
-        dto.setAuthor(book.getAuthor());
-        dto.setPublisher(book.getPublisher());
-        dto.setPages(book.getPages());
-        dto.setPrice(book.getPrice());
-        dto.setIsbn(book.getIsbn());
-        dto.setSummary(book.getSummary());
-        dto.setCatalog(book.getCatalog());
-        dto.setStock(book.getStock());
-        dto.setImageUrl(book.getImageUrl());
-        dto.setAvgRating(book.getAvgRating());
-        dto.setReviewCount(book.getReviewCount());
-        dto.setSalesCount(book.getSalesCount());
-        if (book.getCategory() != null) {
-            dto.setCategoryId(book.getCategory().getId());
-            dto.setCategoryName(book.getCategory().getName());
-        }
-        return dto;
     }
-}

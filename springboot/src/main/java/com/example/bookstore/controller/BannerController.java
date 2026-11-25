@@ -1,7 +1,7 @@
 package com.example.bookstore.controller;
 
-import com.example.bookstore.entity.Banner;
-import com.example.bookstore.repository.BannerRepository;
+import com.example.bookstore.dto.BannerDTO;
+import com.example.bookstore.service.BannerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,14 +11,14 @@ import java.util.List;
 @RequestMapping("/api/banners")
 public class BannerController {
 
-    private final BannerRepository bannerRepository;
+    private final BannerService bannerService;
 
-    public BannerController(BannerRepository bannerRepository) {
-        this.bannerRepository = bannerRepository;
+    public BannerController(BannerService bannerService) {
+        this.bannerService = bannerService;
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<Banner>> getActiveBanners() {
-        return ResponseEntity.ok(bannerRepository.findByStatusOrderBySortOrderAsc("ACTIVE"));
+    public ResponseEntity<List<BannerDTO>> getActiveBanners() {
+        return ResponseEntity.ok(bannerService.getActiveBanners());
     }
 }
