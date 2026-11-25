@@ -1,0 +1,118 @@
+/* ============================================================
+   设计 Token · 原始值
+   文艺杂志风：纸感、墨色、宋体标题、细线、大留白
+   页面与组件只使用 theme.css 中的语义变量，不直接引用本文件
+   ============================================================ */
+
+:root {
+  /* ---------- 色彩 ---------- */
+  --palette-paper: #f6f1e7;
+  --palette-surface: #fffcf6;
+  --palette-surface-muted: #efe8da;
+  --palette-ink: #1c1b19;
+  --palette-ink-soft: #4a463f;
+  --palette-ink-muted: #7a7368;
+  --palette-ink-faint: #a39b8d;
+  --palette-rule: #d9d0bf;
+  --palette-rule-strong: #b9ae99;
+  --palette-moss: #1f3d34;
+  --palette-moss-soft: #2e5a4b;
+  --palette-moss-deep: #16302a;
+  --palette-cinnabar: #a8452f;
+  --palette-cinnabar-soft: #c25b42;
+  --palette-gold: #b08a4a;
+  --palette-success: #3f6b4f;
+  --palette-warning: #9a6b25;
+  --palette-danger: #9e3b32;
+  --palette-info: #3c5a6b;
+  --palette-white: #ffffff;
+
+  /* 深色主题原始值 */
+  --palette-dark-paper: #121513;
+  --palette-dark-surface: #1a1e1b;
+  --palette-dark-surface-muted: #222824;
+  --palette-dark-ink: #e9e3d6;
+  --palette-dark-ink-soft: #c9c2b3;
+  --palette-dark-ink-muted: #948d7f;
+  --palette-dark-ink-faint: #6b6559;
+  --palette-dark-rule: #2f362f;
+  --palette-dark-rule-strong: #465046;
+  --palette-dark-moss: #8fb3a1;
+  --palette-dark-cinnabar: #d97c63;
+  --palette-dark-gold: #c9a45c;
+
+  /* ---------- 字体 ---------- */
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-serif-body: "Noto Serif SC", "Songti SC", SimSun, serif;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+
+  /* ---------- 字号 / 行高 ---------- */
+  --fs-display: 56px;
+  --lh-display: 1.15;
+  --fs-h1: 40px;
+  --lh-h1: 1.2;
+  --fs-h2: 28px;
+  --lh-h2: 1.3;
+  --fs-h3: 20px;
+  --lh-h3: 1.4;
+  --fs-body: 16px;
+  --lh-body: 1.85;
+  --fs-sm: 14px;
+  --lh-sm: 1.6;
+  --fs-xs: 12px;
+  --lh-xs: 1.5;
+  --tracking-eyebrow: 0.12em;
+
+  /* ---------- 间距 ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+  --space-13: 120px;
+
+  /* ---------- 布局 ---------- */
+  --container: 1280px;
+  --container-narrow: 960px;
+  --gutter: 24px;
+  --section-gap: 80px;
+  --nav-height: 72px;
+  --nav-height-compact: 56px;
+
+  /* ---------- 圆角 ---------- */
+  --radius-0: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-pill: 999px;
+
+  /* ---------- 阴影 ---------- */
+  --shadow-hover: 0 8px 24px rgba(28, 27, 25, 0.08);
+  --shadow-popover: 0 12px 32px rgba(28, 27, 25, 0.14);
+
+  /* ---------- 动效 ---------- */
+  --dur-fast: 150ms;
+  --dur-normal: 240ms;
+  --dur-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* ---------- 层级 ---------- */
+  --z-nav: 30;
+  --z-dropdown: 40;
+  --z-sticky: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+  --z-skip-link: 80;
+
+  /* ---------- 断点（供文档参考，CSS 中使用媒体查询） ---------- */
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
+  --bp-wide: 1440px;
+}

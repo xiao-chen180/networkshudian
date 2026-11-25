@@ -5,6 +5,9 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 
 // 引入全局样式
+import './styles/tokens.css'
+import './styles/theme.css'
+import './styles/typography.css'
 import './styles/variables.css'
 import './styles/animations.css'
 

@@ -1,0 +1,113 @@
+/* ============================================================
+   语义主题 · 浅色 / 深色
+   组件与页面只使用 --color-* / --bg-* / --text-* / --border-*
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* 背景 */
+  --color-paper: var(--palette-paper);
+  --color-surface: var(--palette-surface);
+  --color-surface-muted: var(--palette-surface-muted);
+
+  /* 文字 */
+  --color-ink: var(--palette-ink);
+  --color-ink-soft: var(--palette-ink-soft);
+  --color-ink-muted: var(--palette-ink-muted);
+  --color-ink-faint: var(--palette-ink-faint);
+
+  /* 线 / 品牌 / 状态 */
+  --color-rule: var(--palette-rule);
+  --color-rule-strong: var(--palette-rule-strong);
+  --color-moss: var(--palette-moss);
+  --color-moss-soft: var(--palette-moss-soft);
+  --color-moss-deep: var(--palette-moss-deep);
+  --color-cinnabar: var(--palette-cinnabar);
+  --color-cinnabar-soft: var(--palette-cinnabar-soft);
+  --color-gold: var(--palette-gold);
+  --color-success: var(--palette-success);
+  --color-warning: var(--palette-warning);
+  --color-danger: var(--palette-danger);
+  --color-info: var(--palette-info);
+  --color-on-brand: var(--palette-white);
+
+  /* 语义别名 */
+  --bg-page: var(--color-paper);
+  --bg-card: var(--color-surface);
+  --bg-muted: var(--color-surface-muted);
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-ink-muted);
+  --border-color: var(--color-rule);
+
+  /* Element Plus 变量映射 */
+  --el-color-primary: var(--color-moss);
+  --el-color-primary-light-3: #627a70;
+  --el-color-primary-light-5: #8fa39b;
+  --el-color-primary-light-7: #bcc9c3;
+  --el-color-primary-light-8: #d2dbd7;
+  --el-color-primary-light-9: #e9edeb;
+  --el-color-primary-dark-2: #19312a;
+
+  --el-color-success: var(--color-success);
+  --el-color-warning: var(--color-warning);
+  --el-color-danger: var(--color-danger);
+  --el-color-error: var(--color-danger);
+  --el-color-info: var(--color-info);
+
+  --el-bg-color: var(--color-surface);
+  --el-bg-color-overlay: var(--color-surface);
+  --el-fill-color-blank: var(--color-surface);
+  --el-fill-color-light: var(--color-surface-muted);
+
+  --el-text-color-primary: var(--color-ink);
+  --el-text-color-regular: var(--color-ink-soft);
+  --el-text-color-secondary: var(--color-ink-muted);
+  --el-text-color-placeholder: var(--color-ink-faint);
+
+  --el-border-color: var(--color-rule);
+  --el-border-color-light: var(--color-rule);
+  --el-border-color-lighter: var(--color-rule);
+  --el-border-radius-base: var(--radius-md);
+  --el-font-family: var(--font-body);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --color-paper: var(--palette-dark-paper);
+  --color-surface: var(--palette-dark-surface);
+  --color-surface-muted: var(--palette-dark-surface-muted);
+
+  --color-ink: var(--palette-dark-ink);
+  --color-ink-soft: var(--palette-dark-ink-soft);
+  --color-ink-muted: var(--palette-dark-ink-muted);
+  --color-ink-faint: var(--palette-dark-ink-faint);
+
+  --color-rule: var(--palette-dark-rule);
+  --color-rule-strong: var(--palette-dark-rule-strong);
+  --color-moss: var(--palette-dark-moss);
+  --color-moss-soft: #a7c4b4;
+  --color-moss-deep: #0f1d18;
+  --color-cinnabar: var(--palette-dark-cinnabar);
+  --color-cinnabar-soft: #e69b85;
+  --color-gold: var(--palette-dark-gold);
+
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --el-color-primary-light-3: #6d8b7e;
+  --el-color-primary-light-5: #5a7468;
+  --el-color-primary-light-7: #475d53;
+  --el-color-primary-light-8: #3d5048;
+  --el-color-primary-light-9: #2b3a33;
+  --el-color-primary-dark-2: #a7c4b4;
+
+  --el-bg-color: var(--color-surface);
+  --el-bg-color-overlay: var(--color-surface);
+  --el-fill-color-blank: var(--color-surface);
+  --el-fill-color-light: var(--color-surface-muted);
+  --el-border-color: var(--color-rule);
+  --el-border-color-light: var(--color-rule);
+  --el-border-color-lighter: var(--color-rule);
+}

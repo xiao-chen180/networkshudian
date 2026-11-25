@@ -123,6 +123,11 @@ const routes = [
     component: () => import('../views/CheckIn.vue')
   },
   {
+    path: '/design-preview',
+    name: 'DesignPreview',
+    component: () => import('../views/DesignPreview.vue')
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }
