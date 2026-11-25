@@ -1,6 +1,8 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.BookDTO;
+import com.example.bookstore.dto.PriceUpdateRequest;
+import com.example.bookstore.dto.RoleUpdateRequest;
 import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.AdminService;
 import com.example.bookstore.service.BookService;
@@ -57,10 +59,10 @@ public class AdminController {
     @PutMapping("/users/{userId}/role")
     public ResponseEntity<?> updateUserRole(HttpServletRequest request,
                                             @PathVariable Long userId,
-                                            @RequestBody Map<String, String> body) {
+                                            @jakarta.validation.Valid @RequestBody RoleUpdateRequest body) {
         ResponseEntity<?> check = forbiddenIfNotAdmin(request);
         if (check != null) return check;
-        adminService.updateUserRole(userId, body.get("role"));
+        adminService.updateUserRole(userId, body.role());
         return ResponseEntity.ok(Map.of("message", "角色更新成功"));
     }
 
@@ -142,14 +144,11 @@ public class AdminController {
 
     @PutMapping("/books/price")
     public ResponseEntity<?> batchUpdatePrice(HttpServletRequest request,
-                                              @RequestBody Map<String, Object> body) {
+                                              @jakarta.validation.Valid @RequestBody PriceUpdateRequest body) {
         ResponseEntity<?> check = forbiddenIfNotAdmin(request);
         if (check != null) return check;
-        Long categoryId = body.get("categoryId") != null ?
-                Long.parseLong(body.get("categoryId").toString()) : null;
-        BigDecimal adjustment = new BigDecimal(body.get("adjustment").toString());
-        String type = (String) body.getOrDefault("type", "fixed");
-        int count = adminService.batchUpdatePrice(categoryId, adjustment, type);
+        String type = body.type() != null ? body.type() : "fixed";
+        int count = adminService.batchUpdatePrice(body.categoryId(), body.adjustment(), type);
         return ResponseEntity.ok(Map.of("message", "成功调整 " + count + " 本书籍价格"));
     }
 }

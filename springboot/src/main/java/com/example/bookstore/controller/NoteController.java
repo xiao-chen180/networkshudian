@@ -1,15 +1,16 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.dto.CreateNoteRequest;
 import com.example.bookstore.dto.NoteDTO;
+import com.example.bookstore.dto.UpdateNoteRequest;
 import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.NoteService;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notes")
@@ -29,34 +30,45 @@ public class NoteController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<NoteDTO>> getMyNotes(HttpServletRequest request) {
+    public ResponseEntity<List<NoteDTO>> getMyNotes() {
         Long userId = currentUser.getId();
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         return ResponseEntity.ok(noteService.getMyNotes(userId));
     }
 
     @PostMapping
-    public ResponseEntity<NoteDTO> create(HttpServletRequest request, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<NoteDTO> create(@Valid @RequestBody CreateNoteRequest request) {
         Long userId = currentUser.getId();
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        Long bookId = Long.valueOf(body.get("bookId").toString());
-        String title = body.get("title") != null ? body.get("title").toString() : "";
-        String content = body.get("content") != null ? body.get("content").toString() : "";
-        Boolean isPublic = body.get("isPublic") != null ? (Boolean) body.get("isPublic") : true;
-        return ResponseEntity.status(HttpStatus.CREATED).body(noteService.createNote(userId, bookId, title, content, isPublic));
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        NoteDTO note = noteService.createNote(
+                userId,
+                request.bookId(),
+                request.title(),
+                request.content() != null ? request.content() : "",
+                request.isPublic() == null || request.isPublic());
+        return ResponseEntity.status(HttpStatus.CREATED).body(note);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<NoteDTO> update(HttpServletRequest request, @PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<NoteDTO> update(@PathVariable Long id,
+                                          @Valid @RequestBody UpdateNoteRequest request) {
         Long userId = currentUser.getId();
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        return ResponseEntity.ok(noteService.updateNote(userId, id, body.get("title"), body.get("content")));
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(noteService.updateNote(userId, id, request.title(), request.content()));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(HttpServletRequest request, @PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         Long userId = currentUser.getId();
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         noteService.deleteNote(userId, id);
         return ResponseEntity.noContent().build();
     }

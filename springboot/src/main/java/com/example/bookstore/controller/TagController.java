@@ -1,13 +1,15 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.dto.TagBookRequest;
+import com.example.bookstore.dto.TagCreateRequest;
 import com.example.bookstore.dto.TagDTO;
 import com.example.bookstore.service.TagService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tags")
@@ -32,18 +34,16 @@ public class TagController {
     }
 
     @PostMapping
-    public ResponseEntity<TagDTO> createTag(@RequestBody Map<String, String> body) {
-        String name = body.get("name");
-        TagDTO tag = tagService.createTag(name);
+    public ResponseEntity<TagDTO> createTag(@Valid @RequestBody TagCreateRequest body) {
+        TagDTO tag = tagService.createTag(body.name());
         return ResponseEntity.status(HttpStatus.CREATED).body(tag);
     }
 
     @PostMapping("/book/{bookId}")
     public ResponseEntity<Void> addTagToBook(
             @PathVariable Long bookId,
-            @RequestBody Map<String, Long> body) {
-        Long tagId = body.get("tagId");
-        tagService.addTagToBook(bookId, tagId);
+            @Valid @RequestBody TagBookRequest body) {
+        tagService.addTagToBook(bookId, body.tagId());
         return ResponseEntity.ok().build();
     }
 

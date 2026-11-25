@@ -1,10 +1,12 @@
 package com.example.bookstore.controller;
 
+import com.example.bookstore.dto.CouponCalculateRequest;
 import com.example.bookstore.dto.CouponDTO;
 import com.example.bookstore.dto.UserCouponDTO;
 import com.example.bookstore.security.CurrentUser;
 import com.example.bookstore.service.CouponService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -65,17 +67,13 @@ public class CouponController {
 
     @PostMapping("/calculate")
     public ResponseEntity<Map<String, BigDecimal>> calculateDiscount(
-            HttpServletRequest request,
-            @RequestBody Map<String, Object> body) {
+            @Valid @RequestBody CouponCalculateRequest body) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Long userCouponId = Long.valueOf(body.get("userCouponId").toString());
-        BigDecimal totalAmount = new BigDecimal(body.get("totalAmount").toString());
-
-        BigDecimal discount = couponService.calculateDiscount(userCouponId, totalAmount);
+        BigDecimal discount = couponService.calculateDiscount(body.userCouponId(), body.totalAmount());
         return ResponseEntity.ok(Map.of("discount", discount));
     }
 

@@ -1,7 +1,9 @@
 package com.example.bookstore.controller;
 
 import com.example.bookstore.dto.CartItemDTO;
+import com.example.bookstore.dto.QuantityRequest;
 import com.example.bookstore.security.CurrentUser;
+import jakarta.validation.Valid;
 import com.example.bookstore.service.CartService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -11,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -60,15 +61,13 @@ public class CartController {
 
     @PutMapping("/{cartItemId}")
     public ResponseEntity<CartItemDTO> updateCartItem(
-            HttpServletRequest request,
             @PathVariable Long cartItemId,
-            @RequestBody Map<String, Integer> quantityRequest) {
+            @Valid @RequestBody QuantityRequest quantityRequest) {
         Long userId = currentUser.getId();
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Integer quantity = quantityRequest.get("quantity");
-        CartItemDTO cartItem = cartService.updateCartItem(userId, cartItemId, quantity);
+        CartItemDTO cartItem = cartService.updateCartItem(userId, cartItemId, quantityRequest.quantity());
         return ResponseEntity.ok(cartItem);
     }
 
