@@ -1,26 +1,56 @@
 <template>
-  <div class="coupons-page">
-    <div class="hero-section">
-      <h1 class="page-title">🎫 优惠券中心</h1>
-    </div>
-    <div class="coupons-container">
-      <div class="section">
-        <h2 class="section-title">可领取</h2>
-        <div v-if="availableCoupons.length > 0" class="coupon-list">
-          <div v-for="c in availableCoupons" :key="c.id" class="coupon-card">
-            <div class="coupon-left">
-              <span v-if="c.type==='FIXED'" class="coupon-value">¥{{ c.value }}</span>
-              <span v-else-if="c.type==='PERCENT'" class="coupon-value">{{ (100-c.value*10)/10 }}折</span>
-              <span v-else class="coupon-value">减¥{{ c.value }}</span>
-              <span class="coupon-condition" v-if="c.minAmount>0">满{{ c.minAmount }}可用</span>
+  <div class="pg">
+    <div class="pg-wrap">
+      <div class="crumb"><router-link to="/">首页</router-link><i>/</i><span>优惠券</span></div>
+      <div class="pg-head">
+        <div>
+          <h1>优惠券中心</h1>
+          <div class="sub">领取后在结算页选择使用，可与会员折扣叠加</div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button :class="{ on: tab === 'available' }" @click="tab = 'available'">可领取 <em>{{ available.length }}</em></button>
+        <button :class="{ on: tab === 'mine' }" @click="tab = 'mine'">我的券 <em>{{ mine.length }}</em></button>
+      </div>
+
+      <!-- 可领取 -->
+      <div v-if="tab === 'available'">
+        <div class="clist" v-if="available.length">
+          <div class="ticket" v-for="c in available" :key="c.id">
+            <div class="left">
+              <b><i>¥</i>{{ c.type === 'PERCENT' ? c.value : c.value }}</b>
+              <span v-if="Number(c.minAmount) > 0">满 {{ c.minAmount }} 可用</span>
+              <span v-else>无门槛</span>
             </div>
-            <div class="coupon-right">
-              <h3>{{ c.name }}</h3>
-              <button class="claim-btn" @click="claim(c.id)" :disabled="c.remainNum<=0">{{ c.remainNum>0?'领取':'已领完' }}</button>
+            <div class="right">
+              <div class="t">{{ c.name }}</div>
+              <div class="d">有效期至 {{ fmtDate(c.endTime) }} · 剩余 {{ c.remainNum ?? '—' }} 张</div>
+              <button class="btn-line sm" :disabled="Number(c.remainNum) <= 0" @click="claim(c.id)">
+                {{ Number(c.remainNum) > 0 ? '领取' : '已领完' }}
+              </button>
             </div>
           </div>
         </div>
-        <p v-else class="empty">暂无可用优惠券</p>
+        <div class="blank" v-else>暂无可领取的优惠券</div>
+      </div>
+
+      <!-- 我的券 -->
+      <div v-else>
+        <div class="clist" v-if="mine.length">
+          <div class="ticket" v-for="c in mine" :key="c.id" :class="{ used: c.status === 'USED' }">
+            <div class="left">
+              <b><i>¥</i>{{ c.value }}</b>
+              <span>{{ Number(c.minAmount) > 0 ? `满 ${c.minAmount} 可用` : '无门槛' }}</span>
+            </div>
+            <div class="right">
+              <div class="t">{{ c.couponName }}</div>
+              <div class="d">有效期至 {{ fmtDate(c.endTime) }}</div>
+              <span class="tag" :class="{ gold: c.status === 'UNUSED' }">{{ statusText(c.status) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="blank" v-else>还没有优惠券，去领一张吧</div>
       </div>
     </div>
   </div>
@@ -31,16 +61,22 @@ import { ref, onMounted } from 'vue'
 import { couponAPI } from '../api'
 import { ElMessage } from 'element-plus'
 
-const availableCoupons = ref([])
+const tab = ref('available')
+const available = ref([])
+const mine = ref([])
 
-const load = async () => {
+const fmtDate = (t) => (t ? new Date(t).toLocaleDateString('zh-CN') : '—')
+const statusText = (s) => ({ UNUSED: '未使用', USED: '已使用', EXPIRED: '已过期' }[s] || s)
+
+async function load() {
   try {
-    const res = await couponAPI.getAvailable()
-    availableCoupons.value = res.data
-  } catch (e) {}
+    const [a, m] = await Promise.all([couponAPI.getAvailable(), couponAPI.getMyCoupons()])
+    available.value = a.data || []
+    mine.value = m.data || []
+  } catch {}
 }
 
-const claim = async (id) => {
+async function claim(id) {
   try {
     await couponAPI.claim(id)
     ElMessage.success('领取成功')
@@ -50,23 +86,24 @@ const claim = async (id) => {
   }
 }
 
-onMounted(() => load())
+onMounted(load)
 </script>
 
 <style scoped>
-.coupons-page { min-height: 100vh; background: var(--bg-page); }
-.hero-section { background: linear-gradient(135deg, var(--primary), var(--primary-light)); padding: 20px; text-align: center; }
-.page-title { color: white; font-family: var(--font-serif); font-size: 22px; margin: 0; }
-.coupons-container { max-width: 800px; margin: 0 auto; padding: 16px; }
-.section-title { font-size: 18px; color: var(--text-primary); margin-bottom: 12px; }
-.coupon-list { display: flex; flex-direction: column; gap: 12px; }
-.coupon-card { display: flex; background: white; border-radius: 12px; overflow: hidden; }
-.coupon-left { width: 120px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-.coupon-value { font-size: 24px; font-weight: bold; }
-.coupon-condition { font-size: 11px; opacity: 0.8; margin-top: 4px; }
-.coupon-right { flex: 1; padding: 16px; display: flex; align-items: center; justify-content: space-between; }
-.coupon-right h3 { font-size: 15px; margin: 0; }
-.claim-btn { padding: 6px 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-size: 13px; cursor: pointer; }
-.claim-btn:disabled { background: #ccc; }
-.empty { text-align: center; padding: 40px; color: var(--text-secondary); }
+.clist { display: flex; flex-direction: column; gap: 12px; }
+.ticket {
+  display: flex; border: 1px solid var(--color-line); background: var(--color-surface);
+}
+.ticket.used { opacity: .55; }
+.left {
+  width: 168px; flex: none; padding: 22px 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  border-right: 1px dashed var(--color-line-strong);
+}
+.left b { font-family: var(--font-display); font-size: 30px; font-weight: 400; color: var(--color-gold); }
+.left b i { font-style: normal; font-size: 13px; margin-right: 2px; }
+.left span { font-size: 10px; color: var(--color-ink-faint); letter-spacing: .06em; }
+.right { flex: 1; padding: 18px 22px; display: flex; align-items: center; gap: 20px; }
+.right .t { font-family: var(--font-display); font-size: 14px; letter-spacing: .06em; }
+.right .d { font-size: 10px; color: var(--color-ink-faint); letter-spacing: .05em; margin-right: auto; }
 </style>

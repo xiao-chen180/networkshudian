@@ -1,69 +1,82 @@
 <template>
-  <div class="messages-page">
-    <div class="hero-section">
-      <h1 class="page-title">🔔 消息中心</h1>
-    </div>
-    <div class="messages-container">
-      <div v-if="messages.length > 0" class="message-list">
-        <div v-for="msg in messages" :key="msg.id" :class="['message-card', { unread: !msg.isRead }]" @click="markRead(msg)">
-          <div class="msg-icon">{{ msg.type === 'ORDER' ? '📦' : msg.type === 'PROMOTION' ? '🎁' : '📢' }}</div>
-          <div class="msg-content">
-            <h3>{{ msg.title }}</h3>
+  <div class="pg">
+    <div class="pg-wrap">
+      <div class="crumb"><router-link to="/">首页</router-link><i>/</i><router-link to="/profile">个人中心</router-link><i>/</i><span>消息中心</span></div>
+      <div class="pg-head">
+        <div>
+          <h1>消息中心</h1>
+          <div class="sub">共 {{ messages.length }} 条 · 未读 {{ unread }}</div>
+        </div>
+        <button class="btn-line sm" :disabled="!unread" @click="markAll">全部标为已读</button>
+      </div>
+
+      <div class="mlist" v-if="messages.length">
+        <div class="msg" v-for="msg in messages" :key="msg.id" :class="{ unread: !msg.isRead }" @click="markRead(msg)">
+          <span class="type">{{ typeText(msg.type) }}</span>
+          <div class="content">
+            <b>{{ msg.title }}</b>
             <p>{{ msg.content }}</p>
-            <span class="msg-time">{{ formatTime(msg.createdAt) }}</span>
+            <span class="time">{{ fmtTime(msg.createdAt) }}</span>
           </div>
-          <span v-if="!msg.isRead" class="unread-dot"></span>
+          <span class="dot" v-if="!msg.isRead"></span>
         </div>
       </div>
-      <div v-else class="empty">
-        <div class="empty-icon">🔔</div>
-        <p>暂无消息</p>
-      </div>
+      <div class="blank" v-else>暂无消息</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { messageAPI } from '../api'
 
 const messages = ref([])
+const unread = computed(() => messages.value.filter(m => !m.isRead).length)
 
-const load = async () => {
+const typeText = (t) => ({ ORDER: '订单', PROMOTION: '活动', SYSTEM: '系统' }[t] || '通知')
+const fmtTime = (t) => (t ? new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '')
+
+async function load() {
   try {
     const res = await messageAPI.getAll()
-    messages.value = res.data
-  } catch (e) {}
+    messages.value = res.data || []
+  } catch {}
 }
 
-const markRead = async (msg) => {
-  if (!msg.isRead) {
-    try {
-      await messageAPI.markAsRead(msg.id)
-      msg.isRead = true
-    } catch (e) {}
-  }
+async function markRead(msg) {
+  if (msg.isRead) return
+  try {
+    await messageAPI.markAsRead(msg.id)
+    msg.isRead = true
+  } catch {}
 }
 
-const formatTime = (t) => t ? new Date(t).toLocaleString('zh-CN') : ''
+async function markAll() {
+  try {
+    await messageAPI.markAllAsRead()
+    messages.value.forEach(m => { m.isRead = true })
+  } catch {}
+}
 
-onMounted(() => load())
+onMounted(load)
 </script>
 
 <style scoped>
-.messages-page { min-height: 100vh; background: var(--bg-page); }
-.hero-section { background: linear-gradient(135deg, var(--primary), var(--primary-light)); padding: 20px; text-align: center; }
-.page-title { color: white; font-family: var(--font-serif); font-size: 22px; margin: 0; }
-.messages-container { max-width: 800px; margin: 0 auto; padding: 16px; }
-.message-list { display: flex; flex-direction: column; gap: 10px; }
-.message-card { display: flex; align-items: flex-start; gap: 12px; background: white; padding: 16px; border-radius: 12px; cursor: pointer; position: relative; }
-.message-card.unread { background: #fffbe6; }
-.msg-icon { font-size: 24px; flex-shrink: 0; }
-.msg-content { flex: 1; }
-.msg-content h3 { font-size: 15px; margin: 0 0 4px; }
-.msg-content p { font-size: 13px; color: var(--text-secondary); margin: 0 0 6px; }
-.msg-time { font-size: 11px; color: var(--text-secondary); }
-.unread-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-.empty { text-align: center; padding: 80px 0; color: var(--text-secondary); }
-.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.mlist { border-top: 1px solid var(--color-line-strong); }
+.msg {
+  display: flex; gap: 18px; padding: 18px 4px; border-bottom: 1px solid var(--color-line);
+  cursor: pointer; transition: background var(--dur-fast);
+}
+.msg:hover { background: var(--color-surface); }
+.type {
+  width: 44px; flex: none; font-size: 9.5px; letter-spacing: .12em; color: var(--color-ink-faint);
+  padding-top: 3px;
+}
+.msg.unread .type { color: var(--color-gold); }
+.content { flex: 1; min-width: 0; }
+.content b { display: block; font-family: var(--font-display); font-size: 13.5px; font-weight: 400; letter-spacing: .05em; }
+.msg.unread .content b { color: var(--color-ink); }
+.content p { margin-top: 7px; font-size: 11.5px; line-height: 1.9; color: var(--color-ink-muted); letter-spacing: .03em; }
+.time { display: block; margin-top: 9px; font-size: 9.5px; color: var(--color-ink-faint); }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-gold); flex: none; margin-top: 8px; }
 </style>

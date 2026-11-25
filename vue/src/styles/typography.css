@@ -1,5 +1,5 @@
 /* ============================================================
-   基础排版 · 中文阅读优先
+   基础排版 · 深夜书房（Nocturne）· 中文阅读优先
    ============================================================ */
 
 html {
@@ -12,7 +12,7 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   color: var(--color-ink);
-  background: var(--color-paper);
+  background: var(--color-bg);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -20,61 +20,43 @@ body {
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 400;
   color: var(--color-ink);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.06em;
 }
 
-h1 { font-size: var(--fs-h1); line-height: var(--lh-h1); }
-h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); }
-h3 { font-size: var(--fs-h3); line-height: var(--lh-h3); }
+h1 { font-size: var(--fs-h1); line-height: var(--lh-h1); letter-spacing: 0.12em; }
+h2 { font-size: var(--fs-h2); line-height: var(--lh-h2); letter-spacing: 0.14em; }
+h3 { font-size: var(--fs-h3); line-height: var(--lh-h3); letter-spacing: 0.18em; }
 
-p {
-  margin: 0 0 1em;
-}
+p { margin: 0 0 1em; }
 
 a {
-  color: var(--color-moss);
+  color: var(--color-gold);
   text-decoration: none;
   text-underline-offset: 3px;
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
-a:hover {
-  color: var(--color-cinnabar);
-}
+a:hover { color: var(--color-ink); }
 
-img {
-  max-width: 100%;
-  display: block;
-}
+img { max-width: 100%; display: block; }
 
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-}
+button, input, textarea, select { font-family: inherit; }
 
 ::selection {
-  background: var(--color-cinnabar);
-  color: #fff;
+  background: var(--color-gold);
+  color: #14150f;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-moss);
+  outline: 2px solid var(--color-gold);
   outline-offset: 2px;
 }
 
 /* ---------- 工具类 ---------- */
-
 .u-container {
   width: min(100% - var(--gutter) * 2, var(--container));
-  margin-inline: auto;
-}
-
-.u-container-narrow {
-  width: min(100% - var(--gutter) * 2, var(--container-narrow));
   margin-inline: auto;
 }
 
@@ -91,37 +73,16 @@ select {
   font-family: var(--font-display);
   font-size: var(--fs-display);
   line-height: var(--lh-display);
-  font-weight: 600;
-}
-
-.u-prose {
-  font-family: var(--font-serif-body);
-  max-width: 38em;
-  line-height: 1.95;
-}
-
-.u-prose p {
-  margin-bottom: 1em;
-}
-
-.u-prose p:first-of-type::first-letter {
-  float: left;
-  font-size: 3.2em;
-  line-height: 0.9;
-  padding: 0.08em 0.12em 0 0;
-  color: var(--color-cinnabar);
-  font-family: var(--font-display);
+  font-weight: 400;
 }
 
 .u-divider {
   border: 0;
-  border-top: 1px solid var(--color-rule);
+  border-top: 1px solid var(--color-line);
   margin: var(--space-6) 0;
 }
 
-.u-muted {
-  color: var(--color-ink-muted);
-}
+.u-muted { color: var(--color-ink-muted); }
 
 .u-mono {
   font-family: var(--font-mono);
@@ -134,23 +95,20 @@ select {
   top: -100px;
   z-index: var(--z-skip-link);
   padding: var(--space-2) var(--space-4);
-  background: var(--color-moss);
+  background: var(--color-gold);
   color: var(--color-on-brand);
   border-radius: var(--radius-sm);
   transition: top var(--dur-fast) var(--ease-standard);
 }
-
-.u-skip-link:focus {
-  top: var(--space-4);
-}
+.u-skip-link:focus { top: var(--space-4); }
 
 @media (max-width: 767px) {
   :root {
-    --fs-display: 36px;
+    --fs-display: 38px;
     --fs-h1: 30px;
     --fs-h2: 24px;
     --fs-h3: 18px;
-    --fs-body: 15px;
+    --fs-body: 14px;
     --section-gap: 48px;
     --gutter: 16px;
   }

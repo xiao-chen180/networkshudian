@@ -1,47 +1,70 @@
-<template>
+﻿<template>
   <div class="orders-page">
-    <div class="hero-section">
-      <h1 class="page-title">📋 我的订单</h1>
-    </div>
-
-    <div class="orders-container">
-      <!-- 状态筛选 -->
-      <div class="filter-tabs">
-        <button v-for="tab in tabs" :key="tab.key" :class="['tab-btn', { active: activeTab === tab.key }]" @click="activeTab = tab.key">
-          {{ tab.label }}
-        </button>
-      </div>
-
-      <!-- 订单列表 -->
-      <div v-if="filteredOrders.length > 0" class="order-list">
-        <div v-for="order in filteredOrders" :key="order.id" class="order-card">
-          <div class="order-header">
-            <span class="order-no">订单号：SG{{ String(order.id).padStart(8, '0') }}</span>
-            <span :class="['status-badge', order.status.toLowerCase()]">{{ getStatusName(order.status) }}</span>
-          </div>
-          <div v-for="item in order.items" :key="item.id" class="order-item">
-            <img :src="getCover(item)" class="item-cover" />
-            <div class="item-info">
-              <span class="item-name">{{ item.bookName }}</span>
-              <span class="item-qty">x{{ item.quantity }}</span>
-            </div>
-            <span class="item-price">¥{{ formatPrice(item.price) }}</span>
-          </div>
-          <div class="order-footer">
-            <span class="order-total">合计：<strong>¥{{ formatPrice(order.totalPrice) }}</strong></span>
-            <div class="order-actions">
-              <button v-if="order.status === 'PENDING'" class="action-btn danger" @click="cancelOrder(order.id)">取消</button>
-              <button v-if="order.status === 'PENDING'" class="action-btn primary" @click="payOrder(order)">去支付</button>
-              <button v-if="order.status === 'SHIPPED'" class="action-btn primary" @click="confirmReceive(order.id)">确认收货</button>
-            </div>
+    <div class="wrap">
+      <div class="pagehead">
+        <div class="crumb"><router-link to="/">首页</router-link><i>/</i><router-link to="/profile">个人中心</router-link><i>/</i><span>我的订单</span></div>
+        <div class="row">
+          <div>
+            <h1>我的订单</h1>
+            <div class="sub">共 {{ orders.length }} 笔订单</div>
           </div>
         </div>
       </div>
 
-      <div v-else class="empty-state">
-        <div class="empty-icon">📭</div>
-        <p>暂无订单</p>
+      <div class="tabs">
+        <a v-for="t in tabs" :key="t.key" :class="{ on: activeTab === t.key }" @click="activeTab = t.key">
+          {{ t.label }} <em>{{ countOf(t.key) }}</em>
+        </a>
       </div>
+
+      <template v-if="filteredOrders.length">
+        <div class="order" v-for="order in filteredOrders" :key="order.id">
+          <div class="order-h">
+            <span class="no">订单号 {{ orderNo(order) }}</span>
+            <span class="time" v-if="order.createdAt">{{ formatTime(order.createdAt) }}</span>
+            <span class="st"><OrderStatusBadge :status="order.status" /></span>
+          </div>
+
+          <div class="order-b">
+            <div class="items">
+              <div class="oitem" v-for="item in order.items" :key="item.id">
+                <BookCover :src="item.imageUrl || item.bookImageUrl" :title="item.bookName" class="oi-cover" compact ratio="3:4" />
+                <div class="oi-meta">
+                  <b>{{ item.bookName }}</b>
+                  <span>{{ item.bookAuthor || item.author || '书香阁' }}</span>
+                  <span class="qty">× {{ item.quantity }}</span>
+                </div>
+                <div class="oi-price">¥{{ formatPrice(item.price) }}</div>
+              </div>
+            </div>
+            <div class="ototal">
+              <div class="l">实付金额</div>
+              <div class="v">¥{{ formatPrice(order.totalPrice) }}</div>
+              <div class="n">共 {{ totalQty(order) }} 件</div>
+            </div>
+          </div>
+
+          <div class="order-f">
+            <span class="hint">{{ hintOf(order) }}</span>
+            <div class="acts">
+              <button class="obtn" v-if="order.status === 'PENDING'" @click="cancelOrder(order.id)">取消订单</button>
+              <button class="obtn gold" v-if="order.status === 'PENDING'" @click="payOrder(order)">去支付</button>
+              <button class="obtn gold" v-if="order.status === 'SHIPPED'" @click="confirmReceive(order.id)">确认收货</button>
+              <button class="obtn gold" v-if="order.status === 'COMPLETED'" @click="goBook(order.items?.[0]?.bookId)">再次购买</button>
+              <button class="obtn" v-if="order.status === 'COMPLETED'">申请退换</button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <EmptyState
+        v-else
+        icon="◌"
+        :title="activeTab === 'ALL' ? '还没有订单' : '这个状态下没有订单'"
+        description="挑几本喜欢的书，下第一单吧"
+        action-text="去逛书店"
+        :action-to="'/books'"
+      />
     </div>
   </div>
 </template>
@@ -51,6 +74,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { orderAPI } from '../api'
 import { ElMessage } from 'element-plus'
+import BookCover from '../components/common/BookCover.vue'
+import OrderStatusBadge from '../components/common/OrderStatusBadge.vue'
+import EmptyState from '../components/common/EmptyState.vue'
 
 const router = useRouter()
 const orders = ref([])
@@ -59,245 +85,124 @@ const activeTab = ref('ALL')
 const tabs = [
   { key: 'ALL', label: '全部' },
   { key: 'PENDING', label: '待付款' },
-  { key: 'PAID', label: '已付款' },
-  { key: 'SHIPPED', label: '已发货' },
+  { key: 'PAID', label: '待发货' },
+  { key: 'SHIPPED', label: '待收货' },
   { key: 'COMPLETED', label: '已完成' },
   { key: 'CANCELLED', label: '已取消' }
 ]
 
-const filteredOrders = computed(() => {
-  if (activeTab.value === 'ALL') return orders.value
-  return orders.value.filter(o => o.status === activeTab.value)
-})
+const filteredOrders = computed(() =>
+  activeTab.value === 'ALL' ? orders.value : orders.value.filter(o => o.status === activeTab.value)
+)
 
-const loadOrders = async () => {
+const countOf = (key) => (key === 'ALL' ? orders.value.length : orders.value.filter(o => o.status === key).length)
+const orderNo = (o) => `SG${String(o.id).padStart(8, '0')}`
+const formatPrice = (p) => (typeof p === 'string' ? p : Number(p || 0).toFixed(2))
+const formatTime = (t) => new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+const totalQty = (o) => (o.items || []).reduce((s, i) => s + (i.quantity || 0), 0)
+
+const hintOf = (o) => {
+  const map = {
+    PENDING: '30 分钟内未支付将自动取消并释放库存',
+    PAID: '已付款，等待仓库发货',
+    SHIPPED: '已发出，注意查收',
+    COMPLETED: '已完成，评价可得积分',
+    CANCELLED: '订单已取消'
+  }
+  return map[o.status] || ''
+}
+
+async function loadOrders() {
   try {
     const res = await orderAPI.getAll()
     orders.value = res.data || []
-  } catch (e) {
-    console.error(e)
-  }
+  } catch {}
 }
 
-const cancelOrder = async (id) => {
+async function cancelOrder(id) {
   try {
     await orderAPI.updateStatus(id, 'CANCELLED')
     ElMessage.success('已取消')
     loadOrders()
-  } catch (e) {
+  } catch {
     ElMessage.error('取消失败')
   }
 }
 
-const payOrder = (order) => {
-  const totalQuantity = (order.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0)
+function payOrder(order) {
+  const totalQuantity = totalQty(order)
   const total = Number(order.totalPrice) || 0
-  router.push({
-    path: '/payment',
-    query: {
-      orderId: order.id,
-      totalQuantity,
-      totalPrice: total,
-      shippingFee: 0,
-      finalPrice: total
-    }
-  })
+  router.push({ path: '/payment', query: { orderId: order.id, totalQuantity, totalPrice: total, shippingFee: 0, finalPrice: total } })
 }
 
-const confirmReceive = async (id) => {
+async function confirmReceive(id) {
   try {
     await orderAPI.updateStatus(id, 'COMPLETED')
     ElMessage.success('已确认收货')
     loadOrders()
-  } catch (e) {
+  } catch {
     ElMessage.error('操作失败')
   }
 }
 
-const getStatusName = (status) => {
-  const map = { PENDING: '待付款', PAID: '已付款', SHIPPED: '已发货', COMPLETED: '已完成', CANCELLED: '已取消' }
-  return map[status] || status
-}
+const goBook = (id) => id && router.push(`/books/${id}`)
 
-const getCover = (item) => `https://picsum.photos/seed/${item.bookIsbn || item.bookId}/200/280.jpg`
-const formatPrice = (p) => typeof p === 'string' ? p : Number(p).toFixed(2)
-
-onMounted(() => loadOrders())
+onMounted(loadOrders)
 </script>
 
 <style scoped>
-.orders-page {
-  min-height: 100vh;
-  background: var(--bg-page);
+.orders-page { min-height: 100vh; padding-bottom: 40px; }
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
+
+.pagehead { padding: 40px 0 22px; }
+.crumb { font-size: 11px; color: var(--color-ink-faint); letter-spacing: .08em; display: flex; gap: 8px; }
+.crumb a { color: var(--color-ink-muted); }
+.crumb i { font-style: normal; opacity: .5; }
+h1 { margin-top: 14px; font-family: var(--font-display); font-size: var(--fs-h1); font-weight: 400; letter-spacing: .12em; }
+.sub { margin-top: 8px; font-size: 11.5px; color: var(--color-ink-muted); letter-spacing: .08em; }
+
+.tabs { display: flex; gap: 30px; border-bottom: 1px solid var(--color-line-strong); margin-bottom: 6px; }
+.tabs a { padding-bottom: 13px; font-size: 12.5px; letter-spacing: .1em; color: var(--color-ink-muted); cursor: pointer; position: relative; }
+.tabs a.on { color: var(--color-ink); }
+.tabs a.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--color-gold); }
+.tabs em { font-style: normal; font-size: 9px; color: var(--color-ink-faint); margin-left: 4px; }
+
+.order { border: 1px solid var(--color-line); background: var(--color-surface); margin-top: 18px; }
+.order-h { display: flex; align-items: center; gap: 24px; padding: 12px 20px; border-bottom: 1px solid var(--color-line); font-size: 10.5px; color: var(--color-ink-faint); letter-spacing: .08em; }
+.order-h .no { color: var(--color-ink-soft); }
+.order-h .st { margin-left: auto; }
+
+.order-b { display: flex; padding: 4px 20px; }
+.items { flex: 1; }
+.oitem { display: flex; gap: 14px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--color-line); }
+.oitem:last-child { border-bottom: 0; }
+.oi-cover { width: 42px; height: 56px; flex: none; }
+.oi-meta { flex: 1; min-width: 0; }
+.oi-meta b { display: block; font-family: var(--font-display); font-size: 13px; font-weight: 400; letter-spacing: .05em; }
+.oi-meta span { display: block; margin-top: 4px; font-size: 9.5px; color: var(--color-ink-faint); letter-spacing: .06em; }
+.oi-meta .qty { color: var(--color-ink-muted); }
+.oi-price { font-size: 12px; color: var(--color-ink-muted); }
+
+.ototal { width: 180px; flex: none; border-left: 1px solid var(--color-line); margin: 12px 0 12px 20px; padding-left: 20px; display: flex; flex-direction: column; justify-content: center; }
+.ototal .l { font-size: 9.5px; color: var(--color-ink-faint); letter-spacing: .1em; }
+.ototal .v { margin-top: 6px; font-family: var(--font-display); font-size: 21px; color: var(--color-gold); }
+.ototal .n { margin-top: 6px; font-size: 9.5px; color: var(--color-ink-faint); }
+
+.order-f { display: flex; align-items: center; padding: 12px 20px; border-top: 1px solid var(--color-line); }
+.hint { font-size: 9.5px; color: var(--color-ink-faint); letter-spacing: .06em; }
+.acts { margin-left: auto; display: flex; gap: 8px; }
+
+.obtn {
+  height: 30px; padding: 0 14px; border: 1px solid var(--color-line-strong); background: transparent;
+  color: var(--color-ink-soft); font-family: inherit; font-size: 10.5px; letter-spacing: .1em; cursor: pointer;
 }
+.obtn:hover { color: var(--color-ink); border-color: var(--color-ink-muted); }
+.obtn.gold { border-color: var(--color-gold-line); color: var(--color-gold); }
+.obtn.gold:hover { background: var(--color-gold-soft); }
 
-.hero-section {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  padding: 20px;
-  text-align: center;
-}
-
-.page-title {
-  color: white;
-  font-family: var(--font-serif);
-  font-size: 22px;
-  margin: 0;
-}
-
-.orders-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-.filter-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  margin-bottom: 16px;
-  padding-bottom: 4px;
-}
-
-.tab-btn {
-  flex-shrink: 0;
-  padding: 8px 16px;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.tab-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-}
-
-.order-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.order-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.order-no {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.status-badge {
-  padding: 3px 10px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-badge.pending { background: #fff7e6; color: #d48806; }
-.status-badge.paid { background: #e6f7ff; color: #1890ff; }
-.status-badge.shipped { background: #f6ffed; color: #52c41a; }
-.status-badge.completed { background: #f6ffed; color: #52c41a; }
-.status-badge.cancelled { background: #f5f5f5; color: #999; }
-
-.order-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-}
-
-.item-cover {
-  width: 60px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.item-info {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-}
-
-.item-name {
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.item-qty {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.item-price {
-  font-size: 14px;
-  color: var(--accent);
-  font-weight: 500;
-}
-
-.order-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.order-total {
-  font-size: 14px;
-}
-
-.order-total strong {
-  color: var(--accent);
-  font-size: 16px;
-}
-
-.order-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  padding: 6px 16px;
-  border-radius: 16px;
-  font-size: 13px;
-  border: 1px solid #ddd;
-  background: white;
-  cursor: pointer;
-}
-
-.action-btn.primary {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-}
-
-.action-btn.danger {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 80px 0;
-  color: var(--text-secondary);
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+@media (max-width: 767px) {
+  .order-b { flex-direction: column; }
+  .ototal { width: auto; border-left: 0; margin: 0; padding-left: 0; padding-top: 12px; border-top: 1px solid var(--color-line); }
+  .tabs { gap: 16px; overflow-x: auto; }
 }
 </style>

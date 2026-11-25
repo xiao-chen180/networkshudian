@@ -1,85 +1,53 @@
 <template>
-  <div class="scan-payment-container">
-    <div class="payment-header">
-      <h2>扫码支付</h2>
-    </div>
+  <div class="pg">
+    <div class="pg-wrap narrow">
+      <div class="crumb"><router-link to="/">首页</router-link><i>/</i><span>扫码支付</span></div>
 
-    <div class="payment-card">
-      <div class="payment-info">
-        <div class="method-badge" :class="paymentMethod">
-          <span class="method-icon">{{ paymentMethod === 'alipay' ? '💙' : '💚' }}</span>
-          <span class="method-text">{{ paymentMethod === 'alipay' ? '支付宝支付' : '微信支付' }}</span>
+      <div class="paycard">
+        <div class="pc-head">
+          <span class="k">{{ paymentMethod === 'alipay' ? 'ALIPAY' : 'WECHAT PAY' }}</span>
+          <h1>{{ paymentMethod === 'alipay' ? '支付宝扫码支付' : '微信扫码支付' }}</h1>
+          <p class="sub">请使用{{ paymentMethod === 'alipay' ? '支付宝' : '微信' }}扫描下方二维码完成支付</p>
         </div>
-        <div class="amount-section">
-          <span class="amount-label">支付金额</span>
-          <span class="amount-value">¥{{ formatPrice(finalPrice) }}</span>
-        </div>
-      </div>
 
-      <div class="qr-container">
-        <div class="qr-wrapper">
-          <img
-            v-if="paymentMethod === 'wechat'"
-            src="/images/wx.jpg"
-            alt="微信支付二维码"
-            class="qr-code"
-          />
-          <img
-            v-else
-            src="/images/zfb.jpg"
-            alt="支付宝二维码"
-            class="qr-code"
-          />
+        <div class="amount">
+          <span>应付金额</span>
+          <b>¥{{ fmt(finalPrice) }}</b>
         </div>
-        <div class="qr-tip">
-          <span class="tip-icon">📱</span>
-          <span class="tip-text">请使用{{ paymentMethod === 'alipay' ? '支付宝' : '微信' }}扫码支付</span>
+
+        <div class="qr-wrap">
+          <div class="qr" :class="{ paid: isProcessing }">
+            <span v-for="(c, i) in qrCells" :key="i" :class="{ on: c }"></span>
+          </div>
+          <div class="qr-tip" v-if="!isProcessing">二维码有效期 {{ countdownText }}</div>
+          <div class="qr-tip done" v-else>支付处理中…</div>
         </div>
-      </div>
 
-      <div class="payment-hint">
-        <div class="hint-item">
-          <span class="hint-icon">⏱️</span>
-          <span class="hint-text">支付有效期 15 分钟</span>
+        <div class="meta">
+          <div><span>商品数量</span><b>{{ totalQuantity }} 件</b></div>
+          <div><span>商品金额</span><b>¥{{ fmt(totalPrice) }}</b></div>
+          <div><span>运费</span><b>{{ Number(shippingFee) > 0 ? `¥${fmt(shippingFee)}` : '¥0.00' }}</b></div>
+          <div v-if="Number(route.query.couponDiscount) > 0"><span>优惠券</span><b class="disc">− ¥{{ fmt(route.query.couponDiscount) }}</b></div>
         </div>
-        <div class="hint-item">
-          <span class="hint-icon">🔔</span>
-          <span class="hint-text">支付成功后将自动跳转</span>
+
+        <div class="acts">
+          <button class="btn-gold wide" :disabled="isProcessing || isCreatingOrder || !orderId" @click="completePayment">
+            {{ isCreatingOrder ? '正在创建订单…' : isProcessing ? '处理中…' : '我已完成支付' }}
+          </button>
+          <button class="btn-line wide" :disabled="isProcessing" @click="goBackToCart">返回购物袋</button>
         </div>
-      </div>
 
-      <button 
-        class="complete-btn" 
-        @click="completePayment"
-        :disabled="isProcessing"
-      >
-        {{ isProcessing ? '处理中...' : '我已完成支付' }}
-      </button>
-
-      <button 
-        class="back-cart-btn" 
-        @click="goBackToCart"
-      >
-        <span class="btn-icon">🛒</span>
-        <span>返回书篮</span>
-      </button>
-    </div>
-
-    <div class="safe-tips">
-      <div class="safe-icon">🛡️</div>
-      <div class="safe-content">
-        <span class="safe-title">安全提示</span>
-        <span class="safe-text">请确认支付金额，保护您的账户安全</span>
+        <div class="demo-note">教学演示：本项目未接入真实支付网关，点击「我已完成支付」将直接把订单状态改为已付款。</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { orderAPI, cartAPI } from '../api'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const route = useRoute()
@@ -92,427 +60,160 @@ const finalPrice = ref(0)
 const paymentMethod = ref('alipay')
 const isProcessing = ref(false)
 const isCreatingOrder = ref(false)
+const seconds = ref(15 * 60)
+let timer = null
 
-const formatPrice = (price) => {
-  if (typeof price === 'number') {
-    return price.toFixed(2)
+const fmt = (n) => Number(n || 0).toFixed(2)
+const countdownText = computed(() => {
+  const m = String(Math.floor(seconds.value / 60)).padStart(2, '0')
+  const s = String(seconds.value % 60).padStart(2, '0')
+  return `${m}:${s}`
+})
+
+/* 生成稳定的伪二维码图案（不依赖外部图片） */
+const qrCells = computed(() => {
+  const size = 21
+  const cells = []
+  const seed = String(orderId.value || 'bookstore')
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const corner =
+        (x < 7 && y < 7) || (x > size - 8 && y < 7) || (x < 7 && y > size - 8)
+      if (corner) {
+        const edge = x === 0 || y === 0 || x === 6 || y === 6 || x === size - 1 || y === size - 1
+        const inner = (x >= 2 && x <= 4 && y >= 2 && y <= 4) ||
+          (x >= size - 5 && x <= size - 3 && y >= 2 && y <= 4) ||
+          (x >= 2 && x <= 4 && y >= size - 5 && y <= size - 3)
+        cells.push(edge || inner)
+      } else {
+        hash = (hash * 1103515245 + 12345) >>> 0
+        cells.push(((hash >> (x % 16)) & 1) === 1)
+      }
+    }
   }
-  return parseFloat(price).toFixed(2)
-}
+  return cells
+})
 
-const loadOrderInfo = async () => {
-  const orderData = route.query
-  totalQuantity.value = parseInt(orderData.totalQuantity) || 0
-  totalPrice.value = parseFloat(orderData.totalPrice) || 0
-  shippingFee.value = parseFloat(orderData.shippingFee) || 0
-  finalPrice.value = parseFloat(orderData.finalPrice) || 0
-  paymentMethod.value = orderData.paymentMethod || 'alipay'
+async function loadOrderInfo() {
+  const q = route.query
+  totalQuantity.value = parseInt(q.totalQuantity) || 0
+  totalPrice.value = parseFloat(q.totalPrice) || 0
+  shippingFee.value = parseFloat(q.shippingFee) || 0
+  finalPrice.value = parseFloat(q.finalPrice) || 0
+  paymentMethod.value = q.paymentMethod || 'alipay'
 
-  // 如果没有orderId，说明是新订单，需要创建待支付订单
-  if (!orderData.orderId) {
-    await createPendingOrder(orderData)
+  if (q.orderId) {
+    orderId.value = q.orderId
   } else {
-    orderId.value = orderData.orderId
+    await createPendingOrder(q)
   }
 }
 
-const createPendingOrder = async (orderData) => {
+async function createPendingOrder(orderData) {
   isCreatingOrder.value = true
   try {
     let items = []
-
-    // 支持两种方式：1. 购物车选中商品（ids参数）2. 直接购买（bookId参数）
     if (orderData.ids) {
-      // 购物车选中商品
-      const cartIds = orderData.ids.split(',').map(id => parseInt(id))
-      const cartResponse = await cartAPI.getCart()
-      const allItems = cartResponse.data || []
-      const selectedItems = allItems.filter(item => cartIds.includes(item.id))
-      items = selectedItems.map(item => ({
-        bookId: item.bookId,
-        quantity: item.quantity,
-        price: (typeof item.price === 'number' ? item.price : parseFloat(item.price)) * 0.95
+      const cartIds = String(orderData.ids).split(',').map(Number)
+      const res = await cartAPI.getCart()
+      const all = res.data || []
+      items = all.filter(i => cartIds.includes(i.id)).map(i => ({
+        bookId: i.bookId,
+        quantity: i.quantity,
+        price: Number(i.price) * 0.95
       }))
     } else if (orderData.bookId) {
-      // 直接购买（BuyNow）
-      items = [{
-        bookId: parseInt(orderData.bookId),
-        quantity: parseInt(orderData.quantity) || 1,
-        price: 0 // 价格由后端计算
-      }]
+      items = [{ bookId: Number(orderData.bookId), quantity: Number(orderData.quantity) || 1, price: 0 }]
     }
 
-    if (items.length === 0) {
+    if (!items.length) {
       ElMessage.error('没有选中的商品')
       router.push('/cart')
       return
     }
 
-    // 创建待支付订单
-    const response = await orderAPI.createPendingOrder({
+    const res = await orderAPI.createPendingOrder({
       shippingAddress: orderData.address || '',
       phone: orderData.phone || '',
-      items: items,
-      totalPrice: totalPrice.value
+      items,
+      totalPrice: Number(orderData.finalPrice) || totalPrice.value,
+      userCouponId: orderData.couponId ? Number(orderData.couponId) : null
     })
-
-    orderId.value = response.data.id
-    console.log('创建待支付订单成功，订单ID:', orderId.value)
-  } catch (error) {
-    console.error('创建订单失败:', error)
-    ElMessage.error(error.response?.data?.message || '创建订单失败')
+    orderId.value = res.data.id
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '创建订单失败')
     router.push('/cart')
   } finally {
     isCreatingOrder.value = false
   }
 }
 
-const removePurchasedCartItems = async () => {
-  // 只删除本次结算涉及的购物车项；立即购买不触碰购物车
+async function removePurchasedCartItems() {
   const idsParam = route.query.ids
   if (!idsParam) return
-  const ids = String(idsParam)
-    .split(',')
-    .map(id => parseInt(id, 10))
-    .filter(Number.isFinite)
-  if (ids.length === 0) return
+  const ids = String(idsParam).split(',').map(Number).filter(Number.isFinite)
+  if (!ids.length) return
   await Promise.allSettled(ids.map(id => cartAPI.removeFromCart(id)))
 }
 
-const completePayment = async () => {
+async function completePayment() {
   if (isProcessing.value || !orderId.value) return
-
   isProcessing.value = true
-
   try {
     await orderAPI.updateStatus(orderId.value, 'PAID')
-
-    // 支付成功后只移除本次结算的商品，避免误删未结算商品
-    try {
-      await removePurchasedCartItems()
-    } catch (e) {
-      // 移除购物车项失败不影响支付结果
-    }
-
-    ElMessage.success('支付成功！')
-    setTimeout(() => {
-      router.push('/orders')
-    }, 1500)
-  } catch (error) {
-    console.error('支付失败:', error)
-    ElMessage.error(error.response?.data?.message || '支付失败')
+    try { await removePurchasedCartItems() } catch {}
+    ElMessage.success('支付成功')
+    setTimeout(() => router.push('/orders'), 900)
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '支付失败')
     isProcessing.value = false
   }
 }
 
-const goBackToCart = () => {
-  // 返回购物车时不删除商品，直接跳转
-  router.push('/cart')
-}
+const goBackToCart = () => router.push('/cart')
 
 onMounted(() => {
   loadOrderInfo()
+  timer = setInterval(() => { if (seconds.value > 0) seconds.value -= 1 }, 1000)
 })
+onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.scan-payment-container {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 20px;
-  min-height: 100vh;
-  background: #f5f5f5;
-}
+.pg-wrap.narrow { max-width: 560px; }
+.paycard { border: 1px solid var(--color-line); background: var(--color-surface); padding: 30px 34px 26px; margin-top: 18px; }
 
-.payment-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 0;
-  margin-bottom: 20px;
-}
+.pc-head { text-align: center; }
+.pc-head .k { font-size: 8.5px; letter-spacing: .34em; color: var(--color-gold); }
+.pc-head h1 { margin-top: 12px; font-family: var(--font-display); font-size: 24px; font-weight: 400; letter-spacing: .12em; }
+.pc-head .sub { margin-top: 9px; font-size: 10.5px; color: var(--color-ink-muted); letter-spacing: .04em; }
 
-.back-btn {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-}
+.amount { text-align: center; margin-top: 24px; padding: 18px 0; border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); }
+.amount span { display: block; font-size: 10px; letter-spacing: .2em; color: var(--color-ink-faint); }
+.amount b { display: block; margin-top: 10px; font-family: var(--font-display); font-size: 40px; font-weight: 400; color: var(--color-gold); }
 
-.back-icon {
-  font-size: 20px;
-  color: #333;
+.qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 26px 0 20px; }
+.qr {
+  width: 176px; height: 176px; display: grid;
+  grid-template-columns: repeat(21, 1fr); grid-template-rows: repeat(21, 1fr);
+  padding: 10px; background: #f3efe7; border: 1px solid var(--color-gold-line);
+  transition: opacity var(--dur-normal);
 }
+.qr span { background: transparent; }
+.qr span.on { background: #14150f; }
+.qr.paid { opacity: .4; }
+.qr-tip { font-size: 10px; letter-spacing: .1em; color: var(--color-ink-faint); }
+.qr-tip.done { color: var(--color-gold); }
 
-.payment-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
+.meta { display: flex; flex-direction: column; }
+.meta > div { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--color-line); }
+.meta span { font-size: 10.5px; color: var(--color-ink-muted); }
+.meta b { font-size: 11.5px; font-weight: 400; color: var(--color-ink-soft); }
+.meta b.disc { color: var(--color-gold); }
 
-.placeholder {
-  width: 44px;
-}
-
-.payment-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  position: relative;
-  overflow: hidden;
-  animation: scanCardIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes scanCardIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.payment-info {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.method-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  margin-bottom: 16px;
-  animation: badgeSlideIn 0.4s ease forwards;
-}
-
-@keyframes badgeSlideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.method-badge.alipay {
-  background: linear-gradient(135deg, rgba(22, 119, 255, 0.1), rgba(9, 88, 217, 0.1));
-}
-
-.method-badge.wechat {
-  background: linear-gradient(135deg, rgba(7, 193, 96, 0.1), rgba(6, 173, 86, 0.1));
-}
-
-.method-icon {
-  font-size: 20px;
-}
-
-.method-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-}
-
-.amount-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.amount-label {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 8px;
-}
-
-.amount-value {
-  font-size: 36px;
-  font-weight: bold;
-  color: #8B4513;
-  animation: amountPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes amountPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-
-.qr-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.qr-wrapper {
-  width: 220px;
-  height: 220px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  animation: qrPulse 2s ease-in-out infinite;
-}
-
-@keyframes qrPulse {
-  0%, 100% { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); }
-  50% { box-shadow: 0 4px 25px rgba(139, 90, 43, 0.2); }
-}
-
-/* 扫描线效果 */
-.qr-wrapper::after {
-  content: '';
-  position: absolute;
-  left: 10%;
-  width: 80%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(139, 90, 43, 0.6), transparent);
-  animation: scanQr 2s ease-in-out infinite;
-  z-index: 10;
-}
-
-@keyframes scanQr {
-  0% { top: 10%; }
-  100% { top: 90%; }
-}
-
-.qr-code {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  object-fit: contain;
-}
-
-.qr-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.tip-icon {
-  font-size: 16px;
-}
-
-.tip-text {
-  font-size: 14px;
-  color: #666;
-}
-
-.payment-hint {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #FAFAFA;
-  border-radius: 12px;
-}
-
-.hint-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.hint-icon {
-  font-size: 14px;
-}
-
-.hint-text {
-  font-size: 12px;
-  color: #999;
-}
-
-.complete-btn {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #8B4513, #A0522D);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.complete-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #A0522D, #8B4513);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 69, 19, 0.4);
-}
-
-.complete-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.back-cart-btn {
-  width: 100%;
-  padding: 14px;
-  background: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.back-cart-btn:hover {
-  background: #eee;
-  border-color: #ccc;
-}
-
-.back-cart-btn .btn-icon {
-  font-size: 18px;
-}
-
-.safe-tips {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
-  padding: 16px;
-  background: rgba(7, 193, 96, 0.1);
-  border-radius: 12px;
-}
-
-.safe-icon {
-  font-size: 24px;
-}
-
-.safe-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.safe-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-}
-
-.safe-text {
-  font-size: 12px;
-  color: #666;
-}
+.acts { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+.wide { width: 100%; height: 42px; }
+.demo-note { margin-top: 16px; font-size: 9.5px; line-height: 1.8; color: var(--color-ink-faint); text-align: center; }
 </style>

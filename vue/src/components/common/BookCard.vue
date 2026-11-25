@@ -2,9 +2,9 @@
   <article v-if="loading" class="book-card is-loading" aria-hidden="true">
     <SkeletonBlock class="cover-skeleton" ratio="3:4" />
     <div class="body">
-      <SkeletonBlock width="70%" height="18px" />
-      <SkeletonBlock width="45%" height="14px" />
-      <SkeletonBlock width="35%" height="16px" />
+      <SkeletonBlock width="70%" height="16px" />
+      <SkeletonBlock width="45%" height="12px" />
+      <SkeletonBlock width="35%" height="14px" />
     </div>
   </article>
 
@@ -16,7 +16,9 @@
     </router-link>
 
     <div class="body">
-      <p v-if="eyebrow" class="eyebrow">{{ eyebrow }}</p>
+      <div class="meta-top">
+        <span v-if="eyebrow" class="eyebrow">{{ eyebrow }}</span>
+      </div>
       <router-link class="title" :to="detailTo">{{ book.name }}</router-link>
       <p class="author">{{ book.author }}</p>
 
@@ -38,6 +40,7 @@
         :aria-label="`将《${book.name}》加入购物袋`"
         @click="$emit('add', book)"
       >
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 5v14M5 12h14" stroke="currentColor" fill="none" stroke-width="1.6"/></svg>
         {{ soldOut ? '暂时缺货' : '加入购物袋' }}
       </button>
     </div>
@@ -64,6 +67,7 @@ const props = defineProps({
 
 defineEmits(['add'])
 
+const formatRating = (v) => Number(v).toFixed(1)
 const detailTo = computed(() => `/books/${props.book.id}`)
 const soldOut = computed(() => Number(props.book.stock) <= 0)
 const cardLabel = computed(() => `《${props.book.name}》，${props.book.author || '未知作者'}，¥${props.book.price}`)
@@ -71,154 +75,56 @@ const cardLabel = computed(() => `《${props.book.name}》，${props.book.author
 
 <style scoped>
 .book-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  min-width: 0;
+  display: flex; flex-direction: column; gap: var(--space-3); min-width: 0;
+  background: var(--color-surface); border: 1px solid transparent;
+  padding: 12px; transition: border-color var(--dur-normal) var(--ease-standard), background var(--dur-normal);
 }
+.book-card:hover { border-color: var(--color-gold-line); background: var(--color-surface-2); }
 
 .cover-link {
-  position: relative;
-  display: block;
-  border-radius: var(--radius-0);
-  overflow: hidden;
-}
-
-.cover-link :deep(.book-cover) {
-  transition: transform var(--dur-normal) var(--ease-standard), box-shadow var(--dur-normal) var(--ease-standard);
-}
-
-.book-card:hover .cover-link :deep(.book-cover) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-}
-
-.book-card:hover .cover-link :deep(img) {
-  transform: scale(1.02);
+  position: relative; display: block; overflow: hidden;
 }
 
 .rank {
-  position: absolute;
-  left: 0;
-  top: 0;
-  min-width: 28px;
-  padding: var(--space-1) var(--space-2);
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  color: var(--color-on-brand);
-  background: var(--color-moss);
+  position: absolute; left: 0; top: 0; min-width: 24px;
+  padding: 2px 8px; font-family: var(--font-display); font-size: 12px;
+  color: #14150f; background: var(--color-gold);
 }
-
 .sold-out {
-  position: absolute;
-  inset: auto 0 0 0;
-  padding: var(--space-1);
-  text-align: center;
-  font-size: var(--fs-xs);
-  color: var(--color-on-brand);
-  background: rgba(28, 27, 25, 0.72);
+  position: absolute; inset: auto 0 0 0; padding: 4px; text-align: center;
+  font-size: 10px; color: var(--color-ink); background: rgba(0,0,0,.7);
 }
 
-.body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
+.body { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 14px 0 0; }
 
-.eyebrow {
-  margin: 0;
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tracking-eyebrow);
-  color: var(--color-ink-muted);
-}
+.meta-top { display: flex; justify-content: space-between; align-items: center; }
+.eyebrow { font-size: 9px; letter-spacing: .2em; color: var(--color-ink-faint); }
+.rating-badge { font-size: 9px; letter-spacing: .12em; color: var(--color-ink-muted); }
 
 .title {
-  font-family: var(--font-display);
-  font-size: var(--fs-h3);
-  line-height: 1.35;
-  color: var(--color-ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin-top: 8px; font-family: var(--font-display); font-size: 16px; line-height: 1.55; color: var(--color-ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-weight: 400; letter-spacing: .06em;
 }
+.title:hover { color: var(--color-gold); }
+.author { font-size: 11px; color: var(--color-ink-muted); letter-spacing: .06em; }
 
-.title:hover {
-  color: var(--color-cinnabar);
-}
-
-.author {
-  margin: 0;
-  font-size: var(--fs-sm);
-  color: var(--color-ink-muted);
-}
-
-.meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
-  flex-wrap: wrap;
-}
+.meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 
 .add-btn {
-  margin-top: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--fs-sm);
-  color: var(--color-moss);
-  background: transparent;
-  border: 1px solid var(--color-moss);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+  margin-top: 12px; padding: 8px 0; font-size: 12px; letter-spacing: .08em;
+  color: var(--color-gold); background: transparent;
+  border: 1px solid var(--color-gold-line); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background var(--dur-fast);
 }
+.add-btn:hover:not(:disabled) { background: var(--color-gold-soft); }
+.add-btn:disabled { color: var(--color-ink-faint); border-color: var(--color-line); cursor: not-allowed; }
 
-.add-btn:hover:not(:disabled) {
-  color: var(--color-on-brand);
-  background: var(--color-moss);
-}
-
-.add-btn:disabled {
-  color: var(--color-ink-faint);
-  border-color: var(--color-rule);
-  cursor: not-allowed;
-}
-
-/* 列表形态 */
-.variant-list {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.variant-list .cover-link {
-  flex: 0 0 96px;
-}
-
-.variant-list .body {
-  flex: 1;
-}
-
-/* 骨架 */
-.cover-skeleton {
-  width: 100%;
-}
-
-.cover-skeleton :deep(.skeleton) {
-  aspect-ratio: 3 / 4;
-  height: auto;
-}
-
-.is-loading .body {
-  gap: var(--space-2);
-  padding-top: var(--space-2);
-}
+.cover-skeleton :deep(.skeleton) { aspect-ratio: 3/4; height: auto; }
+.is-loading .body { gap: 8px; padding-top: 8px; }
 
 @media (max-width: 767px) {
-  .title {
-    font-size: 17px;
-  }
+  .title { font-size: 14px; }
 }
 </style>

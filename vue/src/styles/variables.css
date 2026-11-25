@@ -1,50 +1,50 @@
 /* ============================================================
-   旧变量别名
-   历史页面大量使用 --primary / --bg-primary 等名称。
-   这里统一映射到新的主题语义变量，保证增量改版期间旧页面仍可正常显示。
+   旧变量别名 → 深夜书房（Nocturne）映射
+   历史页面大量使用 --primary / --bg-primary 等名称，
+   这里统一映射到新的暗色语义变量，保证增量改版期间旧页面仍可正常显示。
    新代码请直接使用 theme.css / tokens.css 中的变量。
    ============================================================ */
 
 :root {
   /* 品牌 */
-  --primary: var(--color-moss);
-  --primary-light: var(--color-moss-soft);
-  --primary-dark: var(--color-moss-deep);
-  --primary-bg: rgba(31, 61, 52, 0.08);
+  --primary: var(--color-gold);
+  --primary-light: #d9bc80;
+  --primary-dark: #b89445;
+  --primary-bg: var(--color-gold-soft);
 
-  --secondary: var(--color-gold);
-  --secondary-light: #d3b98a;
-  --secondary-dark: #8f6f38;
+  --secondary: #c9a45c;
+  --secondary-light: #d9bc80;
+  --secondary-dark: #a8833e;
 
-  --accent: var(--color-cinnabar);
-  --accent-light: var(--color-cinnabar-soft);
+  --accent: var(--color-gold);
+  --accent-light: #d9bc80;
 
   /* 状态 */
   --success: var(--color-success);
-  --success-light: #6f967d;
+  --success-light: #99b8a0;
   --warning: var(--color-warning);
-  --warning-light: #c39a5e;
+  --warning-light: #d4b468;
   --danger: var(--color-danger);
-  --danger-light: #c46a5f;
+  --danger-light: #e09b8e;
   --info: var(--color-info);
-  --info-light: #6f8b9b;
+  --info-light: #99b0bc;
 
   /* 文字 */
   --text-primary: var(--color-ink);
   --text-secondary: var(--color-ink-soft);
   --text-muted: var(--color-ink-muted);
-  --text-white: var(--color-on-brand);
+  --text-white: var(--color-ink);
 
   /* 背景 */
-  --bg-primary: var(--color-paper);
-  --bg-secondary: var(--color-surface-muted);
+  --bg-primary: var(--color-bg);
+  --bg-secondary: var(--color-surface);
   --bg-card: var(--color-surface);
-  --bg-hover: var(--color-surface-muted);
-  --bg-page: var(--color-paper);
+  --bg-hover: var(--color-surface-2);
+  --bg-page: var(--color-bg);
 
   /* 边框 */
-  --border-color: var(--color-rule);
-  --border-light: var(--color-rule);
+  --border-color: var(--color-line);
+  --border-light: var(--color-line);
 
   /* 阴影 */
   --shadow-sm: none;
@@ -54,7 +54,7 @@
 
   /* 圆角 */
   --radius-sm: 2px;
-  --radius-md: 4px;
+  --radius-md: 2px;
   --radius-lg: 4px;
   --radius-xl: 6px;
   --radius-full: 999px;
@@ -73,18 +73,18 @@
   --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
 
   /* 字号（旧命名） */
-  --text-xs: 12px;
-  --text-sm: 14px;
-  --text-base: 16px;
-  --text-lg: 18px;
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
   --text-xl: 20px;
   --text-2xl: 28px;
-  --text-3xl: 28px;
-  --text-4xl: 40px;
+  --text-3xl: 42px;
+  --text-4xl: 62px;
 
   /* 动效 */
-  --duration-fast: 150ms;
-  --duration-normal: 240ms;
+  --duration-fast: 120ms;
+  --duration-normal: 220ms;
   --duration-slow: 320ms;
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);

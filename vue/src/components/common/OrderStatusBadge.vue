@@ -1,5 +1,8 @@
 <template>
-  <span class="status" :class="`status-${tone}`">{{ label }}</span>
+  <span class="status" :class="`status-${tone}`">
+    <i class="dot"></i>
+    {{ label }}
+  </span>
 </template>
 
 <script setup>
@@ -10,11 +13,11 @@ const props = defineProps({
 })
 
 const map = {
-  PENDING: { label: '待付款', tone: 'warning' },
-  PAID: { label: '待发货', tone: 'info' },
-  SHIPPED: { label: '待收货', tone: 'brand' },
-  COMPLETED: { label: '已完成', tone: 'success' },
-  CANCELLED: { label: '已取消', tone: 'muted' }
+  PENDING: { label: '待付款', tone: 'gold' },
+  PAID: { label: '待发货', tone: 'sage' },
+  SHIPPED: { label: '待收货', tone: 'info' },
+  COMPLETED: { label: '已完成', tone: 'muted' },
+  CANCELLED: { label: '已取消', tone: 'danger' }
 }
 
 const label = computed(() => map[props.status]?.label || props.status)
@@ -23,19 +26,14 @@ const tone = computed(() => map[props.status]?.tone || 'muted')
 
 <style scoped>
 .status {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px var(--space-2);
-  font-size: var(--fs-xs);
-  line-height: 1.6;
-  border: 1px solid currentColor;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; letter-spacing: .08em; white-space: nowrap;
 }
+.dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
 
-.status-warning { color: var(--color-warning); }
-.status-info { color: var(--color-info); }
-.status-brand { color: var(--color-moss); }
-.status-success { color: var(--color-success); }
-.status-muted { color: var(--color-ink-faint); }
+.status-gold   { color: var(--color-gold); }
+.status-sage   { color: var(--color-sage); }
+.status-info   { color: var(--color-info); }
+.status-muted  { color: var(--color-ink-faint); }
+.status-danger { color: var(--color-danger); }
 </style>

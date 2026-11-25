@@ -1,15 +1,16 @@
 /* ============================================================
-   语义主题 · 浅色 / 深色
+   语义主题 · 深夜书房（Nocturne Editorial）
    组件与页面只使用 --color-* / --bg-* / --text-* / --border-*
    ============================================================ */
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
   /* 背景 */
-  --color-paper: var(--palette-paper);
+  --color-bg: var(--palette-bg);
   --color-surface: var(--palette-surface);
-  --color-surface-muted: var(--palette-surface-muted);
+  --color-surface-2: var(--palette-surface-2);
+  --color-surface-3: var(--palette-surface-3);
 
   /* 文字 */
   --color-ink: var(--palette-ink);
@@ -17,37 +18,44 @@
   --color-ink-muted: var(--palette-ink-muted);
   --color-ink-faint: var(--palette-ink-faint);
 
-  /* 线 / 品牌 / 状态 */
-  --color-rule: var(--palette-rule);
-  --color-rule-strong: var(--palette-rule-strong);
-  --color-moss: var(--palette-moss);
-  --color-moss-soft: var(--palette-moss-soft);
-  --color-moss-deep: var(--palette-moss-deep);
-  --color-cinnabar: var(--palette-cinnabar);
-  --color-cinnabar-soft: var(--palette-cinnabar-soft);
+  /* 分隔 */
+  --color-line: var(--palette-line);
+  --color-line-strong: var(--palette-line-strong);
+
+  /* 品牌 */
   --color-gold: var(--palette-gold);
+  --color-gold-soft: var(--palette-gold-soft);
+  --color-gold-line: var(--palette-gold-line);
+
+  /* 语义状态 */
   --color-success: var(--palette-success);
   --color-warning: var(--palette-warning);
   --color-danger: var(--palette-danger);
   --color-info: var(--palette-info);
-  --color-on-brand: var(--palette-white);
+  --color-sage: var(--palette-sage);
 
-  /* 语义别名 */
-  --bg-page: var(--color-paper);
+  /* 覆盖色 */
+  --color-on-brand: #14150f;
+
+  /* ---------- 语义别名 ---------- */
+  --bg-page: var(--color-bg);
   --bg-card: var(--color-surface);
-  --bg-muted: var(--color-surface-muted);
+  --bg-muted: var(--color-surface-2);
   --text-primary: var(--color-ink);
   --text-secondary: var(--color-ink-muted);
-  --border-color: var(--color-rule);
+  --border-color: var(--color-line);
 
-  /* Element Plus 变量映射 */
-  --el-color-primary: var(--color-moss);
-  --el-color-primary-light-3: #627a70;
-  --el-color-primary-light-5: #8fa39b;
-  --el-color-primary-light-7: #bcc9c3;
-  --el-color-primary-light-8: #d2dbd7;
-  --el-color-primary-light-9: #e9edeb;
-  --el-color-primary-dark-2: #19312a;
+  /* ============================================================
+     Element Plus 变量映射
+     ============================================================ */
+
+  --el-color-primary: var(--color-gold);
+  --el-color-primary-light-3: #d9bc80;
+  --el-color-primary-light-5: #e1c997;
+  --el-color-primary-light-7: #ead6af;
+  --el-color-primary-light-8: #ede0c2;
+  --el-color-primary-light-9: #f2ead5;
+  --el-color-primary-dark-2: #b89445;
 
   --el-color-success: var(--color-success);
   --el-color-warning: var(--color-warning);
@@ -55,59 +63,65 @@
   --el-color-error: var(--color-danger);
   --el-color-info: var(--color-info);
 
-  --el-bg-color: var(--color-surface);
+  --el-bg-color: var(--color-bg);
   --el-bg-color-overlay: var(--color-surface);
+  --el-bg-color-page: var(--color-bg);
   --el-fill-color-blank: var(--color-surface);
-  --el-fill-color-light: var(--color-surface-muted);
+  --el-fill-color: var(--color-surface);
+  --el-fill-color-light: var(--color-surface-2);
+  --el-fill-color-lighter: var(--color-surface-3);
+  --el-fill-color-extra-light: var(--color-surface-2);
 
   --el-text-color-primary: var(--color-ink);
   --el-text-color-regular: var(--color-ink-soft);
   --el-text-color-secondary: var(--color-ink-muted);
   --el-text-color-placeholder: var(--color-ink-faint);
+  --el-text-color-disabled: var(--color-ink-faint);
 
-  --el-border-color: var(--color-rule);
-  --el-border-color-light: var(--color-rule);
-  --el-border-color-lighter: var(--color-rule);
-  --el-border-radius-base: var(--radius-md);
+  --el-border-color: var(--color-line);
+  --el-border-color-light: var(--color-line);
+  --el-border-color-lighter: var(--color-line);
+  --el-border-color-dark: var(--color-line-strong);
+  --el-border-color-darker: var(--color-line-strong);
+
+  --el-border-radius-base: var(--radius-sm);
+  --el-border-radius-small: var(--radius-sm);
+  --el-border-radius-round: var(--radius-pill);
   --el-font-family: var(--font-body);
-}
 
-:root.dark {
-  color-scheme: dark;
+  --el-mask-color: rgba(0, 0, 0, 0.7);
+  --el-mask-color-extra-light: rgba(0, 0, 0, 0.45);
 
-  --color-paper: var(--palette-dark-paper);
-  --color-surface: var(--palette-dark-surface);
-  --color-surface-muted: var(--palette-dark-surface-muted);
+  /* 对话框、弹出框 */
+  --el-dialog-bg-color: var(--color-surface);
+  --el-popover-bg-color: var(--color-surface);
+  --el-popper-border-color: var(--color-line-strong);
 
-  --color-ink: var(--palette-dark-ink);
-  --color-ink-soft: var(--palette-dark-ink-soft);
-  --color-ink-muted: var(--palette-dark-ink-muted);
-  --color-ink-faint: var(--palette-dark-ink-faint);
+  /* 输入框 */
+  --el-input-bg-color: var(--color-surface-2);
+  --el-input-border-color: var(--color-line);
+  --el-input-hover-border-color: var(--color-line-strong);
+  --el-input-focus-border-color: var(--color-gold);
+  --el-input-placeholder-color: var(--color-ink-faint);
 
-  --color-rule: var(--palette-dark-rule);
-  --color-rule-strong: var(--palette-dark-rule-strong);
-  --color-moss: var(--palette-dark-moss);
-  --color-moss-soft: #a7c4b4;
-  --color-moss-deep: #0f1d18;
-  --color-cinnabar: var(--palette-dark-cinnabar);
-  --color-cinnabar-soft: #e69b85;
-  --color-gold: var(--palette-dark-gold);
+  /* 按钮 */
+  --el-button-bg-color: var(--color-surface-2);
+  --el-button-border-color: var(--color-line);
+  --el-button-hover-bg-color: var(--color-surface-3);
+  --el-button-hover-border-color: var(--color-line-strong);
+  --el-button-active-bg-color: var(--color-surface-3);
 
-  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.45);
+  /* 表格 */
+  --el-table-bg-color: var(--color-surface);
+  --el-table-header-bg-color: var(--color-surface-2);
+  --el-table-tr-bg-color: transparent;
+  --el-table-border-color: var(--color-line);
+  --el-table-row-hover-bg-color: var(--color-surface-3);
 
-  --el-color-primary-light-3: #6d8b7e;
-  --el-color-primary-light-5: #5a7468;
-  --el-color-primary-light-7: #475d53;
-  --el-color-primary-light-8: #3d5048;
-  --el-color-primary-light-9: #2b3a33;
-  --el-color-primary-dark-2: #a7c4b4;
-
-  --el-bg-color: var(--color-surface);
-  --el-bg-color-overlay: var(--color-surface);
-  --el-fill-color-blank: var(--color-surface);
-  --el-fill-color-light: var(--color-surface-muted);
-  --el-border-color: var(--color-rule);
-  --el-border-color-light: var(--color-rule);
-  --el-border-color-lighter: var(--color-rule);
+  /* 标签 / 导航菜单 */
+  --el-menu-bg-color: var(--color-bg);
+  --el-menu-hover-bg-color: var(--color-surface-2);
+  --el-menu-text-color: var(--color-ink-muted);
+  --el-menu-active-color: var(--color-gold);
+  --el-tag-bg-color: var(--color-surface-2);
 }

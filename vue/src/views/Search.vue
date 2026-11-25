@@ -1,65 +1,107 @@
 <template>
-  <div class="search-page">
-    <div class="search-header">
-      <div class="search-input-wrapper">
-        <input v-model="keyword" type="text" placeholder="搜索书名、作者" @keyup.enter="doSearch" autofocus />
-        <button v-if="keyword" class="clear-btn" @click="keyword=''">×</button>
-      </div>
-      <button class="search-btn" @click="doSearch">搜索</button>
-    </div>
-    <div class="search-body" v-if="hasSearched">
-      <div v-if="results.length > 0" class="results">
-        <div v-for="book in results" :key="book.id" class="result-card" @click="router.push(`/books/${book.id}`)">
-          <img :src="getCover(book)" class="result-cover" />
-          <div class="result-info">
-            <h3>{{ book.name }}</h3>
-            <p>{{ book.author }}</p>
-            <span class="result-price">¥{{ formatPrice(book.price) }}</span>
-          </div>
+  <div class="pg">
+    <div class="pg-wrap">
+      <div class="crumb"><router-link to="/">首页</router-link><i>/</i><span>搜索</span></div>
+      <div class="pg-head">
+        <div>
+          <h1>搜索</h1>
+          <div class="sub">支持书名、作者与 ISBN 模糊匹配</div>
         </div>
       </div>
-      <div v-else class="empty"><p>未找到相关图书</p></div>
+
+      <div class="searchbar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m19 19-3.2-3.2"/></svg>
+        <input v-model="keyword" placeholder="输入书名、作者或 ISBN" @keyup.enter="doSearch" autofocus />
+        <button v-if="keyword" class="clear" @click="clear">×</button>
+      </div>
+
+      <template v-if="hasSearched">
+        <div class="result-line">
+          <span>「{{ lastKeyword }}」找到 {{ results.length }} 种图书</span>
+          <router-link to="/books">浏览全部图书 →</router-link>
+        </div>
+
+        <div class="grid" v-if="results.length">
+          <BookCard v-for="b in results" :key="b.id" :book="b" :show-action="isLoggedIn" @add="addToCart" />
+        </div>
+        <div class="blank" v-else>没有找到相关图书，换个关键词试试</div>
+      </template>
+      <div class="hint" v-else>
+        <span>热门搜索</span>
+        <a v-for="w in hot" :key="w" @click="quick(w)">{{ w }}</a>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { bookAPI } from '../api'
+import { ref, computed } from 'vue'
+import { bookAPI, cartAPI } from '../api'
+import { ElMessage } from 'element-plus'
+import BookCard from '../components/common/BookCard.vue'
 
-const router = useRouter()
 const keyword = ref('')
+const lastKeyword = ref('')
 const results = ref([])
 const hasSearched = ref(false)
+const hot = ['三体', '红楼梦', '活着', '百年孤独', '平凡的世界']
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 
-const doSearch = async () => {
-  if (!keyword.value.trim()) return
+async function doSearch() {
+  const kw = keyword.value.trim()
+  if (!kw) return
   hasSearched.value = true
+  lastKeyword.value = kw
   try {
-    const res = await bookAPI.getAll({ keyword: keyword.value.trim(), size: 50 })
-    results.value = res.data.content || []
-  } catch (e) {}
+    const res = await bookAPI.getAll({ keyword: kw, size: 50 })
+    results.value = res.data?.content || []
+  } catch {
+    results.value = []
+  }
 }
 
-const getCover = (b) => `https://picsum.photos/seed/${b.isbn||b.id}/200/280.jpg`
-const formatPrice = (p) => typeof p === 'string' ? p : p.toFixed(2)
+function quick(w) {
+  keyword.value = w
+  doSearch()
+}
+
+function clear() {
+  keyword.value = ''
+  hasSearched.value = false
+  results.value = []
+}
+
+async function addToCart(book) {
+  try {
+    await cartAPI.addToCart({ bookId: book.id, quantity: 1 })
+    ElMessage.success('已加入购物袋')
+  } catch {
+    ElMessage.error('加入失败，请先登录')
+  }
+}
 </script>
 
 <style scoped>
-.search-page { min-height: 100vh; background: var(--bg-page); }
-.search-header { display: flex; gap: 10px; padding: 12px 16px; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 10; }
-.search-input-wrapper { flex: 1; display: flex; align-items: center; background: #f5f5f5; border-radius: 8px; padding: 0 12px; }
-.search-input-wrapper input { flex: 1; border: none; outline: none; background: transparent; padding: 10px 0; font-size: 14px; }
-.clear-btn { background: none; border: none; font-size: 18px; color: #999; cursor: pointer; }
-.search-btn { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; font-size: 14px; cursor: pointer; }
-.search-body { padding: 16px; max-width: 800px; margin: 0 auto; }
-.results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.result-card { display: flex; gap: 12px; background: white; border-radius: 12px; padding: 12px; cursor: pointer; }
-.result-cover { width: 70px; height: 90px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
-.result-info { flex: 1; }
-.result-info h3 { font-size: 15px; margin: 0 0 4px; }
-.result-info p { font-size: 12px; color: var(--text-secondary); margin: 0 0 8px; }
-.result-price { color: var(--accent); font-weight: bold; }
-.empty { text-align: center; padding: 80px 0; color: var(--text-secondary); }
+.searchbar {
+  height: 48px; border: 1px solid var(--color-line); background: var(--color-surface);
+  display: flex; align-items: center; gap: 12px; padding: 0 16px;
+}
+.searchbar svg { width: 16px; height: 16px; stroke: var(--color-ink-muted); fill: none; stroke-width: 1.6; flex: none; }
+.searchbar input {
+  flex: 1; border: 0; background: transparent; outline: 0; color: var(--color-ink);
+  font-family: inherit; font-size: 13.5px; letter-spacing: .04em;
+}
+.searchbar input::placeholder { color: var(--color-ink-faint); }
+.clear { border: 0; background: none; color: var(--color-ink-faint); font-size: 16px; cursor: pointer; }
+
+.result-line { display: flex; align-items: center; justify-content: space-between; margin: 22px 0 18px; font-size: 11px; color: var(--color-ink-muted); letter-spacing: .06em; }
+.result-line a { color: var(--color-gold); }
+
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+
+.hint { margin-top: 26px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--color-ink-faint); }
+.hint a { color: var(--color-ink-soft); border-bottom: 1px solid var(--color-line-strong); padding-bottom: 2px; cursor: pointer; }
+.hint a:hover { color: var(--color-gold); }
+
+@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 </style>

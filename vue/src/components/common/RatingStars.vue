@@ -28,45 +28,15 @@ const label = computed(() => `评分 ${numeric.value.toFixed(1)} / 5`)
 </script>
 
 <style scoped>
-.rating {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-gold);
-  line-height: 1;
-  white-space: nowrap;
-}
+.rating { display: inline-flex; align-items: center; gap: 4px; color: var(--color-gold); line-height: 1; white-space: nowrap; }
 
-.stars {
-  position: relative;
-  display: inline-block;
-  font-size: 14px;
-  letter-spacing: 1px;
-}
+.stars { position: relative; display: inline-block; font-size: 13px; letter-spacing: 2px; }
+.size-sm .stars { font-size: 11px; }
+.size-lg .stars { font-size: 17px; }
 
-.size-sm .stars { font-size: 12px; }
-.size-lg .stars { font-size: 18px; }
+.stars-empty { color: var(--color-line-strong); }
+.stars-filled { position: absolute; inset: 0; overflow: hidden; color: var(--color-gold); }
 
-.stars-empty {
-  color: var(--color-rule-strong);
-}
-
-.stars-filled {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  color: var(--color-gold);
-}
-
-.value {
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  color: var(--color-ink-muted);
-}
-
-.count {
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  color: var(--color-ink-faint);
-}
+.value { font-size: 10px; color: var(--color-ink-muted); letter-spacing: .04em; }
+.count { font-size: 10px; color: var(--color-ink-faint); }
 </style>

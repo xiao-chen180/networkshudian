@@ -30,48 +30,23 @@ const hasOriginal = computed(() => props.originalPrice != null && Number(props.o
 
 <style scoped>
 .price-block {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  font-family: var(--font-display);
-  color: var(--color-cinnabar);
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); margin: 0;
+  font-family: var(--font-display); color: var(--color-gold);
 }
-
-.currency {
-  font-size: 0.65em;
-  transform: translateY(-0.1em);
-}
-
-.price {
-  font-size: 1.4em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.size-sm .price { font-size: 1.1em; }
-.size-lg .price { font-size: 2em; }
+.currency { font-size: 0.6em; }
+.price { font-size: 1.3em; line-height: 1; font-variant-numeric: tabular-nums; }
+.size-sm .price { font-size: 1.05em; }
+.size-lg .price { font-size: 1.8em; }
 
 .original {
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  color: var(--color-ink-faint);
-  text-decoration: line-through;
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--color-ink-faint); text-decoration: line-through;
 }
-
 .member {
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  color: var(--color-moss);
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--color-ink-muted);
+  border: 1px solid var(--color-gold-line); padding: 1px 6px;
 }
-
 .tag {
-  padding: 1px var(--space-2);
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
-  color: var(--color-cinnabar);
-  border: 1px solid var(--color-cinnabar);
-  border-radius: var(--radius-sm);
+  padding: 1px 6px; font-family: var(--font-body); font-size: var(--fs-xs);
+  color: var(--color-gold); border: 1px solid var(--color-gold-line);
 }
 </style>

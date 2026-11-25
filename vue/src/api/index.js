@@ -128,6 +128,7 @@ export const tagAPI = {
 export const couponAPI = {
   getAvailable: () => api.get('/api/coupons/available'),
   getMyCoupons: () => api.get('/api/coupons/my'),
+  getMyUnused: () => api.get('/api/coupons/my/unused'),
   claim: (couponId) => api.post(`/api/coupons/${couponId}/claim`),
   calculate: (data) => api.post('/api/coupons/calculate', data)
 }
@@ -139,7 +140,8 @@ export const pointsAPI = {
 
 export const checkInAPI = {
   getStatus: () => api.get('/api/checkin/status'),
-  checkIn: () => api.post('/api/checkin')
+  checkIn: () => api.post('/api/checkin'),
+  drawLottery: () => api.post('/api/checkin/lottery')
 }
 
 export const noteAPI = {

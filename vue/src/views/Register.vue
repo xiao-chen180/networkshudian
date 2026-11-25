@@ -1,71 +1,50 @@
 <template>
-  <div class="register">
-    <!-- 浮动粒子背景 -->
-    <div class="particles-bg">
-      <div v-for="i in 15" :key="i" class="particle" :style="particleStyle(i)"></div>
-    </div>
+  <div class="login-page">
+    <div class="card">
+      <div class="form-side">
+        <h1>加入书香阁</h1>
+        <p class="sub">注册即享会员 95 折，连续签到还能抽好书</p>
 
-    <div class="register-card animate-fade-up">
-      <div class="card-header">
-        <div class="seal-icon animate-scale-in">书</div>
-        <h2>用户注册</h2>
-        <p class="subtitle">注册即享会员专属折扣</p>
+        <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form">
+          <el-form-item label="账号" prop="account">
+            <el-input v-model="form.account" placeholder="用于登录，建议手机号或邮箱前缀" size="large" />
+          </el-form-item>
+          <el-form-item label="昵称" prop="username">
+            <el-input v-model="form.username" placeholder="显示在书评与笔记上" size="large" />
+          </el-form-item>
+          <div class="grid2">
+            <el-form-item label="密码" prop="password">
+              <el-input :type="showPassword ? 'text' : 'password'" v-model="form.password" placeholder="至少 6 位" size="large">
+                <template #suffix><span class="eye" @click="showPassword = !showPassword">{{ showPassword ? '隐藏' : '显示' }}</span></template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="确认密码" prop="confirmPassword">
+              <el-input :type="showConfirm ? 'text' : 'password'" v-model="form.confirmPassword" placeholder="再输入一次" size="large">
+                <template #suffix><span class="eye" @click="showConfirm = !showConfirm">{{ showConfirm ? '隐藏' : '显示' }}</span></template>
+              </el-input>
+            </el-form-item>
+          </div>
+
+          <button type="button" class="submit" :disabled="loading" @click="register">
+            {{ loading ? '注册中…' : '注册' }}
+          </button>
+        </el-form>
+
+        <div class="links">
+          <router-link to="/login">已有账号？去登录</router-link>
+          <router-link to="/admin-login" class="admin">管理员入口 →</router-link>
+        </div>
       </div>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="stagger-form">
-        <el-form-item label="账号" prop="account" class="stagger-item" style="--delay: 0.1s">
-          <el-input v-model="form.account" placeholder="请输入账号，用于登录"></el-input>
-        </el-form-item>
-        <el-form-item label="用户名" prop="username" class="stagger-item" style="--delay: 0.15s">
-          <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password" class="stagger-item" style="--delay: 0.2s">
-          <el-input :type="showPassword ? 'text' : 'password'" v-model="form.password" placeholder="至少6个字符，建议包含字母和数字">
-            <template #suffix>
-              <span class="eye-btn" @click="showPassword = !showPassword">
-                <svg v-if="showPassword" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              </span>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword" label-width="100px" class="stagger-item" style="--delay: 0.25s">
-          <el-input :type="showConfirmPassword ? 'text' : 'password'" v-model="form.confirmPassword" placeholder="请再次输入密码">
-            <template #suffix>
-              <span class="eye-btn" @click="showConfirmPassword = !showConfirmPassword">
-                <svg v-if="showConfirmPassword" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              </span>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item class="stagger-item" style="--delay: 0.3s">
-          <el-button type="primary" @click="register" class="register-submit-btn" :loading="loading">
-            {{ loading ? '注册中...' : '注册' }}
-          </el-button>
-          <el-button @click="goLogin" class="login-btn">已有账号？立即登录</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 管理员后台按钮 - 页面右下角 -->
-    <div class="admin-link">
-      <router-link to="/admin-login" class="admin-btn">
-        <span class="admin-icon">⚙️</span>
-        <span>管理员后台</span>
-      </router-link>
+      <aside class="aside">
+        <div class="brand"><b>书香阁</b><span>EST. 2026</span></div>
+        <div class="perks">
+          <div><b>95 折</b><span>注册即享会员折扣</span></div>
+          <div><b>+10 积分</b><span>每日签到即可获得</span></div>
+          <div><b>满 99 免邮</b><span>全部图书正版直发</span></div>
+        </div>
+        <div class="aside-foot">注册后可同步收藏、笔记与订单</div>
+      </aside>
     </div>
   </div>
 </template>
@@ -80,357 +59,109 @@ const router = useRouter()
 const formRef = ref()
 const loading = ref(false)
 const showPassword = ref(false)
-const showConfirmPassword = ref(false)
+const showConfirm = ref(false)
 
-const form = reactive({
-  account: '',
-  username: '',
-  password: '',
-  confirmPassword: ''
-})
+const form = reactive({ account: '', username: '', password: '', confirmPassword: '' })
 
 const rules = {
-  account: [
-    { required: true, message: '请输入账号', trigger: 'blur' }
-  ],
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
+  account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+  username: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度至少为6位', trigger: 'blur' },
-    { max: 100, message: '密码长度不能超过100位', trigger: 'blur' }
+    { min: 6, message: '密码至少 6 位', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },
-    { validator: (rule, value, callback) => {
-      if (value !== form.password) {
-        callback(new Error('两次输入的密码不一致'))
-      } else {
-        callback()
-      }
-    }, trigger: 'blur' }
+    {
+      validator: (rule, value, callback) => (value !== form.password ? callback(new Error('两次输入不一致')) : callback()),
+      trigger: 'blur'
+    }
   ]
 }
 
-const register = async () => {
+async function register() {
   if (!formRef.value) return
-  const valid = await formRef.value.validate()
+  const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
   loading.value = true
-
   try {
-    const registerData = {
+    await authAPI.register({
       account: form.account,
       username: form.username,
       email: '',
       phone: '',
       password: form.password,
       adminSecret: ''
-    }
-
-    await authAPI.register(registerData)
-
-    ElMessage.success('注册成功！即将跳转到登录页面...')
-    setTimeout(() => {
-      router.push('/login')
-    }, 1500)
+    })
+    ElMessage.success('注册成功，去登录吧')
+    setTimeout(() => router.push('/login'), 900)
   } catch (error) {
-    const response = error.response?.data
-    if (response) {
-      if (response.errors && typeof response.errors === 'object') {
-        const errorMessages = []
-        for (const [field, msg] of Object.entries(response.errors)) {
-          const fieldLabels = {
-            username: '用户名',
-            email: '邮箱',
-            phone: '手机号',
-            password: '密码'
-          }
-          errorMessages.push(`${fieldLabels[field] || field}：${msg}`)
-        }
-        ElMessage.error(errorMessages.join('；'))
-      } else if (response.message) {
-        ElMessage.error(response.message)
-      } else {
-        ElMessage.error('注册失败，请稍后重试')
-      }
-    } else if (error.message) {
-      if (error.message.includes('Network Error')) {
-        ElMessage.error('网络连接失败，请检查网络后重试')
-      } else {
-        ElMessage.error(`注册失败：${error.message}`)
-      }
-    } else {
-      ElMessage.error('注册失败，请稍后重试')
-    }
+    const res = error.response?.data
+    const msg = res?.message
+      || (res?.errors ? Object.values(res.errors).join('；') : '')
+      || '注册失败，请稍后再试'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
-  }
-}
-
-const goLogin = () => router.push('/login')
-
-const particleStyle = (i) => {
-  const size = 4 + Math.random() * 8
-  const left = Math.random() * 100
-  const duration = 10 + Math.random() * 15
-  const delay = Math.random() * 12
-  const opacity = 0.12 + Math.random() * 0.2
-  return {
-    width: size + 'px',
-    height: size + 'px',
-    left: left + '%',
-    animationDuration: duration + 's',
-    animationDelay: delay + 's',
-    opacity: opacity
   }
 }
 </script>
 
 <style scoped>
-.register {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  background: linear-gradient(180deg, #faf7f2 0%, #f0ebe3 100%);
-  position: relative;
-  overflow: hidden;
+.login-page {
+  min-height: calc(100vh - 102px); display: flex; align-items: center; justify-content: center;
+  padding: 50px 24px; position: relative;
 }
-
-/* 粒子背景 */
-.particles-bg {
-  position: absolute;
-  inset: 0;
+.login-page::before {
+  content: ""; position: absolute; left: 50%; top: 6%; width: 900px; height: 600px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(211,174,106,.07), transparent 62%);
   pointer-events: none;
-  z-index: 0;
 }
+.card { display: flex; width: 900px; border: 1px solid var(--color-line); background: var(--color-surface); position: relative; z-index: 1; }
+.form-side { flex: 1; padding: 48px 52px 40px; }
+h1 { font-family: var(--font-display); font-size: 30px; font-weight: 400; letter-spacing: .14em; }
+.sub { margin-top: 10px; font-size: 11.5px; color: var(--color-ink-muted); letter-spacing: .08em; }
 
-.particles-bg .particle {
-  position: absolute;
-  bottom: -10px;
-  background: linear-gradient(135deg, #d4a574, #8b5a2b);
-  border-radius: 50%;
-  animation: particleRise linear infinite;
+.form { margin-top: 26px; }
+.form :deep(.el-form-item__label) { font-size: 10.5px; letter-spacing: .16em; color: var(--color-ink-muted); padding-bottom: 4px; }
+.form :deep(.el-input__wrapper) { background: var(--color-bg); box-shadow: 0 0 0 1px var(--color-line) inset; border-radius: 0; }
+.form :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--color-gold) inset; }
+.form :deep(.el-input__inner) { color: var(--color-ink); letter-spacing: .04em; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+.eye { font-size: 10px; color: var(--color-ink-faint); cursor: pointer; letter-spacing: .1em; }
+
+.submit {
+  width: 100%; height: 44px; margin-top: 8px; border: 1px solid var(--color-gold);
+  background: var(--color-gold); color: #14150f; font-family: inherit; font-size: 13px;
+  letter-spacing: .22em; cursor: pointer;
 }
+.submit:disabled { opacity: .45; cursor: not-allowed; }
+.links { display: flex; justify-content: space-between; margin-top: 20px; font-size: 10.5px; letter-spacing: .06em; }
+.links a { color: var(--color-ink-muted); }
+.links a:hover { color: var(--color-gold); }
+.links .admin { color: var(--color-ink-faint); }
 
-@keyframes particleRise {
-  0% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.25;
-  }
-  90% {
-    opacity: 0.25;
-  }
-  100% {
-    transform: translateY(-85vh) rotate(720deg);
-    opacity: 0;
-  }
+.aside {
+  width: 320px; flex: none; padding: 44px 36px; border-left: 1px solid var(--color-line);
+  background: radial-gradient(120% 80% at 100% 0%, rgba(211,174,106,.10), transparent 60%), var(--color-bg);
+  display: flex; flex-direction: column;
 }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand b { font-family: var(--font-display); font-size: 22px; letter-spacing: .3em; font-weight: 500; }
+.brand span { font-size: 8px; letter-spacing: .36em; color: var(--color-ink-faint); }
+.perks { margin-top: auto; display: flex; flex-direction: column; gap: 18px; }
+.perks b { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--color-gold); letter-spacing: .06em; }
+.perks span { display: block; margin-top: 5px; font-size: 10.5px; color: var(--color-ink-muted); letter-spacing: .04em; }
+.aside-foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--color-line); font-size: 10.5px; color: var(--color-ink-faint); }
 
-.register-card {
-  width: 450px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 2px solid rgba(212, 196, 168, 0.6);
-  border-radius: 20px;
-  box-shadow:
-    0 10px 40px rgba(139, 90, 43, 0.12),
-    inset 0 0 20px rgba(139, 90, 43, 0.03);
-  position: relative;
-  z-index: 1;
-  opacity: 0;
-}
-
-/* 交错动画 */
-.stagger-form .stagger-item {
-  opacity: 0;
-  animation: staggerFadeUp 0.5s var(--ease-out) forwards;
-  animation-delay: var(--delay);
-}
-
-@keyframes staggerFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.card-header {
-  text-align: center;
-  margin-bottom: 30px;
-  position: relative;
-}
-
-.seal-icon {
-  position: absolute;
-  top: -25px;
-  right: -25px;
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #c21500, #ffc500);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 24px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(194, 21, 0, 0.4);
-  animation: sealSpin 0.8s var(--ease-bounce);
-}
-
-@keyframes sealSpin {
-  0% { transform: scale(0) rotate(-180deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-
-.card-header h2 {
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 32px;
-  color: #4a3728;
-  margin: 35px 0 10px;
-}
-
-.subtitle {
-  font-family: 'STSong', 'SimSun', serif;
-  font-size: 14px;
-  color: #8b7355;
-}
-
-.register-submit-btn {
-  width: 100%;
-  margin-bottom: 15px;
-  padding: 14px;
-  background: linear-gradient(135deg, #8b5a2b, #a0522d);
-  border: none;
-  border-radius: 10px;
-  color: white;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 18px;
-  letter-spacing: 2px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.register-submit-btn::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -60%;
-  width: 40%;
-  height: 200%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: rotate(25deg);
-  transition: left 0.6s ease;
-}
-
-.register-submit-btn:hover {
-  background: linear-gradient(135deg, #a0522d, #c21500);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 90, 43, 0.4);
-}
-
-.register-submit-btn:hover::after {
-  left: 120%;
-}
-
-.login-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid #8b5a2b;
-  border-radius: 10px;
-  color: #8b5a2b;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.login-btn:hover {
-  background: rgba(139, 90, 43, 0.1);
-  color: #8b5a2b;
-  transform: translateY(-1px);
-}
-
-.admin-link {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 1000;
-}
-
-.admin-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #8b5a2b, #a0522d);
-  color: white;
-  border-radius: 20px;
-  font-size: 13px;
-  text-decoration: none;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.3);
-}
-
-.admin-btn:hover {
-  background: linear-gradient(135deg, #a0522d, #8b5a2b);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 90, 43, 0.4);
-}
-
-.admin-icon {
-  font-size: 14px;
-}
-
-.eye-btn {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  color: #999;
-  transition: color 0.2s;
-}
-
-.eye-btn:hover {
-  color: #8b5a2b;
-}
-
-:deep(.el-form-item__label) {
-  font-family: 'STKaiti', 'KaiTi', serif;
-  color: #4a3728;
-  font-size: 15px;
-}
-
-:deep(.el-input__wrapper) {
-  border: 1px solid #d4c4a8;
-  border-radius: 4px;
-}
-
-:deep(.el-input__wrapper:hover) {
-  border-color: #8b5a2b;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px rgba(139, 90, 43, 0.1);
-  border-color: #8b5a2b;
-}
-
-:deep(.el-form-item__error) {
-  color: #c21500;
-  font-family: 'STSong', 'SimSun', serif;
+@media (max-width: 900px) {
+  .card { flex-direction: column; width: 100%; max-width: 460px; }
+  .aside { width: 100%; border-left: 0; border-top: 1px solid var(--color-line); padding: 28px; }
+  .perks { margin-top: 20px; }
+  .aside-foot { display: none; }
+  .form-side { padding: 32px 28px; }
+  .grid2 { grid-template-columns: 1fr; }
 }
 </style>

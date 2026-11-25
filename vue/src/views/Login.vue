@@ -1,52 +1,49 @@
 <template>
-  <div class="login">
-    <!-- 浮动粒子背景 -->
-    <div class="particles-bg">
-      <div v-for="i in 12" :key="i" class="particle" :style="particleStyle(i)"></div>
-    </div>
+  <div class="login-page">
+    <div class="card">
+      <!-- 左：品牌与引言 -->
+      <aside class="aside">
+        <div class="brand"><b>书香阁</b><span>EST. 2026</span></div>
+        <div class="quote">
+          <p>「一本书的意义，<br>往往在合上之后的<br>第三个夜晚才出现。」</p>
+          <cite>—— 本期编辑手记</cite>
+        </div>
+        <div class="aside-foot">登录后可同步你的收藏、笔记与订单</div>
+      </aside>
 
-    <div class="login-card animate-fade-up">
-      <div class="card-header">
-        <div class="seal-icon animate-scale-in">书</div>
-        <h2>用户登录</h2>
-        <p class="subtitle">欢迎回到书香阁</p>
+      <!-- 右：表单 -->
+      <div class="form-side">
+        <h1>欢迎回来</h1>
+        <p class="sub">登录书香阁，继续你的阅读</p>
+
+        <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="form">
+          <el-form-item label="账号" prop="account">
+            <el-input v-model="form.account" placeholder="手机号 / 邮箱 / 账号" size="large" />
+          </el-form-item>
+          <el-form-item label="密码" prop="password">
+            <el-input
+              :type="showPassword ? 'text' : 'password'"
+              v-model="form.password"
+              placeholder="请输入密码"
+              size="large"
+              @keyup.enter="login"
+            >
+              <template #suffix>
+                <span class="eye" @click="showPassword = !showPassword">{{ showPassword ? '隐藏' : '显示' }}</span>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <button type="button" class="submit" :disabled="loading" @click="login">
+            {{ loading ? '登录中…' : '登录' }}
+          </button>
+        </el-form>
+
+        <div class="links">
+          <router-link to="/register">还没有账号？立即注册</router-link>
+          <router-link to="/admin-login" class="admin">管理员入口 →</router-link>
+        </div>
       </div>
-
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" class="stagger-form">
-        <el-form-item label="账号" prop="account" class="stagger-item" style="--delay: 0.1s">
-          <el-input v-model="form.account" placeholder="请输入账号"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password" class="stagger-item" style="--delay: 0.2s">
-          <el-input :type="showPassword ? 'text' : 'password'" v-model="form.password" placeholder="请输入密码">
-            <template #suffix>
-              <span class="eye-btn" @click="showPassword = !showPassword">
-                <svg v-if="showPassword" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              </span>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item class="stagger-item" style="--delay: 0.3s">
-          <el-button type="primary" @click="login" class="login-btn" :loading="loading">
-            {{ loading ? '登录中...' : '登录' }}
-          </el-button>
-          <el-button @click="goRegister" class="register-btn">还没有账号？立即注册</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <!-- 管理员后台按钮 - 页面右下角 -->
-    <div class="admin-link">
-      <router-link to="/admin-login" class="admin-btn">
-        <span class="admin-icon">⚙️</span>
-        <span>管理员后台</span>
-      </router-link>
     </div>
   </div>
 </template>
@@ -62,34 +59,24 @@ const formRef = ref()
 const loading = ref(false)
 const showPassword = ref(false)
 
-const form = reactive({
-  account: '',
-  password: ''
-})
+const form = reactive({ account: '', password: '' })
 
 const rules = {
-  account: [
-    { required: true, message: '请输入账号', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
-  ]
+  account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-const login = async () => {
+async function login() {
   if (!formRef.value) return
-  const valid = await formRef.value.validate()
+  const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
   loading.value = true
-
   try {
-    const response = await authAPI.login(form)
-    const { accessToken, account, username, userId, discount, role } = response.data
-
+    const res = await authAPI.login(form)
+    const { accessToken, account, username, userId, discount, role } = res.data
     const userRole = role ? role.toLowerCase() : 'user'
 
-    // 检查是否是管理员账号
     if (userRole === 'admin') {
       ElMessage.error('管理员请使用管理员后台登录')
       return
@@ -102,286 +89,83 @@ const login = async () => {
     localStorage.setItem('discount', discount)
     localStorage.setItem('role', userRole)
 
-    ElMessage.success('登录成功！欢迎回来')
-    setTimeout(() => {
-      router.push('/')
-      window.location.reload()
-    }, 1000)
+    ElMessage.success('登录成功，欢迎回来')
+    setTimeout(() => { router.push('/'); window.location.reload() }, 600)
   } catch (error) {
-    const response = error.response?.data
-    if (response?.message) {
-      ElMessage.error(response.message)
-    } else if (error.message?.includes('Network Error')) {
-      ElMessage.error('网络连接失败，请检查网络后重试')
-    } else {
-      ElMessage.error('登录失败，请检查用户名和密码')
-    }
+    const msg = error.response?.data?.message
+    ElMessage.error(msg || (error.message?.includes('Network') ? '网络连接失败' : '账号或密码不正确'))
   } finally {
     loading.value = false
-  }
-}
-
-const goRegister = () => router.push('/register')
-
-const particleStyle = (i) => {
-  const size = 4 + Math.random() * 8
-  const left = Math.random() * 100
-  const duration = 8 + Math.random() * 12
-  const delay = Math.random() * 10
-  const opacity = 0.15 + Math.random() * 0.25
-  return {
-    width: size + 'px',
-    height: size + 'px',
-    left: left + '%',
-    animationDuration: duration + 's',
-    animationDelay: delay + 's',
-    opacity: opacity
   }
 }
 </script>
 
 <style scoped>
-.login {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  background: linear-gradient(180deg, #faf7f2 0%, #f0ebe3 100%);
-  position: relative;
-  overflow: hidden;
+.login-page {
+  min-height: calc(100vh - 102px); display: flex; align-items: center; justify-content: center;
+  padding: 60px 24px; position: relative;
 }
-
-/* 粒子背景 */
-.particles-bg {
-  position: absolute;
-  inset: 0;
+.login-page::before {
+  content: ""; position: absolute; left: 50%; top: 10%; width: 900px; height: 600px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(211,174,106,.07), transparent 62%);
   pointer-events: none;
-  z-index: 0;
 }
 
-.particles-bg .particle {
-  position: absolute;
-  bottom: -10px;
-  background: linear-gradient(135deg, #d4a574, #8b5a2b);
-  border-radius: 50%;
-  animation: particleRise linear infinite;
+.card {
+  display: flex; width: 900px; border: 1px solid var(--color-line); background: var(--color-surface);
+  position: relative; z-index: 1;
 }
 
-@keyframes particleRise {
-  0% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.3;
-  }
-  90% {
-    opacity: 0.3;
-  }
-  100% {
-    transform: translateY(-85vh) rotate(720deg);
-    opacity: 0;
-  }
+/* 左侧 */
+.aside {
+  width: 380px; flex: none; padding: 44px 40px; display: flex; flex-direction: column;
+  border-right: 1px solid var(--color-line);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(211,174,106,.10), transparent 60%),
+    var(--color-bg);
 }
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand b { font-family: var(--font-display); font-size: 22px; letter-spacing: .3em; font-weight: 500; }
+.brand span { font-size: 8px; letter-spacing: .36em; color: var(--color-ink-faint); }
+.quote { margin-top: auto; }
+.quote p { font-family: var(--font-display); font-size: 16px; line-height: 2.1; color: var(--color-ink-soft); letter-spacing: .06em; }
+.quote cite { display: block; margin-top: 16px; font-style: normal; font-size: 10px; letter-spacing: .14em; color: var(--color-ink-faint); }
+.aside-foot { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--color-line); font-size: 10.5px; letter-spacing: .06em; color: var(--color-ink-faint); }
 
-.login-card {
-  width: 450px;
-  padding: 40px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 2px solid rgba(212, 196, 168, 0.6);
-  border-radius: 20px;
-  box-shadow:
-    0 10px 40px rgba(139, 90, 43, 0.12),
-    inset 0 0 20px rgba(139, 90, 43, 0.03);
-  position: relative;
-  z-index: 1;
-  opacity: 0;
+/* 右侧 */
+.form-side { flex: 1; padding: 56px 56px 44px; }
+h1 { font-family: var(--font-display); font-size: 30px; font-weight: 400; letter-spacing: .14em; }
+.sub { margin-top: 10px; font-size: 11.5px; color: var(--color-ink-muted); letter-spacing: .08em; }
+
+.form { margin-top: 32px; }
+.form :deep(.el-form-item__label) {
+  font-size: 10.5px; letter-spacing: .16em; color: var(--color-ink-muted); padding-bottom: 4px;
 }
-
-/* 交错动画 */
-.stagger-form .stagger-item {
-  opacity: 0;
-  animation: staggerFadeUp 0.5s var(--ease-out) forwards;
-  animation-delay: var(--delay);
+.form :deep(.el-input__wrapper) {
+  background: var(--color-bg); box-shadow: 0 0 0 1px var(--color-line) inset; border-radius: 0;
 }
+.form :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px var(--color-gold) inset; }
+.form :deep(.el-input__inner) { color: var(--color-ink); letter-spacing: .04em; }
+.eye { font-size: 10px; color: var(--color-ink-faint); cursor: pointer; letter-spacing: .1em; }
 
-@keyframes staggerFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.submit {
+  width: 100%; height: 44px; margin-top: 10px; border: 1px solid var(--color-gold);
+  background: var(--color-gold); color: #14150f; font-family: inherit; font-size: 13px;
+  letter-spacing: .22em; cursor: pointer; transition: opacity var(--dur-fast);
 }
+.submit:hover:not(:disabled) { opacity: .88; }
+.submit:disabled { opacity: .45; cursor: not-allowed; }
 
-.card-header {
-  text-align: center;
-  margin-bottom: 30px;
-  position: relative;
-}
+.links { display: flex; justify-content: space-between; margin-top: 22px; font-size: 10.5px; letter-spacing: .06em; }
+.links a { color: var(--color-ink-muted); }
+.links a:hover { color: var(--color-gold); }
+.links .admin { color: var(--color-ink-faint); }
 
-.seal-icon {
-  position: absolute;
-  top: -25px;
-  right: -25px;
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #c21500, #ffc500);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 24px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(194, 21, 0, 0.4);
-  animation: sealSpin 0.8s var(--ease-bounce);
-}
-
-@keyframes sealSpin {
-  0% { transform: scale(0) rotate(-180deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-
-.card-header h2 {
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 32px;
-  color: #4a3728;
-  margin: 0 0 10px;
-}
-
-.subtitle {
-  font-family: 'STSong', 'SimSun', serif;
-  font-size: 14px;
-  color: #8b7355;
-}
-
-.login-btn {
-  width: 100%;
-  margin-bottom: 15px;
-  padding: 14px;
-  background: linear-gradient(135deg, #8b5a2b, #a0522d);
-  border: none;
-  border-radius: 10px;
-  color: white;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 18px;
-  letter-spacing: 2px;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.login-btn::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -60%;
-  width: 40%;
-  height: 200%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: rotate(25deg);
-  transition: left 0.6s ease;
-}
-
-.login-btn:hover {
-  background: linear-gradient(135deg, #a0522d, #c21500);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 90, 43, 0.4);
-}
-
-.login-btn:hover::after {
-  left: 120%;
-}
-
-.register-btn {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid #8b5a2b;
-  border-radius: 10px;
-  color: #8b5a2b;
-  font-family: 'STKaiti', 'KaiTi', serif;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.register-btn:hover {
-  background: rgba(139, 90, 43, 0.1);
-  color: #8b5a2b;
-  transform: translateY(-1px);
-}
-
-.admin-link {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 1000;
-}
-
-.admin-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #8b5a2b, #a0522d);
-  color: white;
-  border-radius: 20px;
-  font-size: 13px;
-  text-decoration: none;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.3);
-}
-
-.admin-btn:hover {
-  background: linear-gradient(135deg, #a0522d, #8b5a2b);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 90, 43, 0.4);
-}
-
-.admin-icon {
-  font-size: 14px;
-}
-
-.eye-btn {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  color: #999;
-  transition: color 0.2s;
-}
-
-.eye-btn:hover {
-  color: #8b5a2b;
-}
-
-:deep(.el-form-item__label) {
-  font-family: 'STKaiti', 'KaiTi', serif;
-  color: #4a3728;
-  font-size: 15px;
-}
-
-:deep(.el-input__wrapper) {
-  border: 1px solid #d4c4a8;
-  border-radius: 4px;
-}
-
-:deep(.el-input__wrapper:hover) {
-  border-color: #8b5a2b;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 2px rgba(139, 90, 43, 0.1);
-  border-color: #8b5a2b;
-}
-
-:deep(.el-form-item__error) {
-  color: #c21500;
-  font-family: 'STSong', 'SimSun', serif;
+@media (max-width: 900px) {
+  .card { flex-direction: column; width: 100%; max-width: 460px; }
+  .aside { width: 100%; border-right: 0; border-bottom: 1px solid var(--color-line); padding: 28px; }
+  .quote, .aside-foot { display: none; }
+  .form-side { padding: 32px 28px; }
 }
 </style>

@@ -1,14 +1,10 @@
 <template>
   <main class="preview u-container">
     <PageHeader
-      eyebrow="Design System · v1.0"
-      title="设计基座预览"
+      eyebrow="Design System · Nocturne"
+      title="深夜书房 · 设计基座"
       description="验证 token、排版与基础组件。此页面仅用于开发阶段对照，不进入正式导航。"
-    >
-      <template #actions>
-        <DarkModeToggle />
-      </template>
-    </PageHeader>
+    />
 
     <section class="block">
       <SectionHeader eyebrow="01 / Color" title="色彩" description="纸色、墨色与克制的朱砂点缀。" />
@@ -96,7 +92,6 @@ import QuantityStepper from '../components/common/QuantityStepper.vue'
 import OrderStatusBadge from '../components/common/OrderStatusBadge.vue'
 import EmptyState from '../components/common/EmptyState.vue'
 import SkeletonBlock from '../components/common/SkeletonBlock.vue'
-import DarkModeToggle from '../components/DarkModeToggle.vue'
 
 const quantity = ref(1)
 
