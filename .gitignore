@@ -35,3 +35,7 @@ build/
 ### Node / Vue ###
 node_modules/
 dist/
+
+### Local environment ###
+.env.local
+.env.*.local

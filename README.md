@@ -87,7 +87,8 @@ flowchart LR
 │       ├── router/       # 路由与守卫
 │       ├── styles/       # 主题变量与动画
 │       └── views/        # 页面
-├── picture/              # 支付二维码示例图片
+├── .github/workflows/    # CI（后端/前端构建）
+├── .editorconfig
 ├── pom.xml               # Maven 聚合 POM
 └── mvnw / mvnw.cmd       # Maven Wrapper
 ```
@@ -136,12 +137,18 @@ npm run dev
 
 ### 5. 创建管理员账号
 
-系统不会自动生成管理员。可在注册接口中携带 `adminSecret`（见 [`UserService`](springboot/src/main/java/com/example/bookstore/service/UserService.java) 中的常量）：
+系统不会自动生成管理员。推荐把已注册用户的角色直接改为管理员：
+
+```sql
+UPDATE users SET role = 'ADMIN', discount = 1.00 WHERE account = '你的账号';
+```
+
+也可以通过环境变量 `BOOKSTORE_ADMIN_SECRET` 启用管理员注册：启动后端前设置该变量，并在注册请求中携带相同的 `adminSecret`。未配置时注册接口无法创建管理员：
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"account":"admin","username":"管理员","password":"123456","email":"admin@example.com","phone":"","adminSecret":"<密钥>"}'
+  -d '{"account":"admin","username":"管理员","password":"123456","email":"admin@example.com","phone":"","adminSecret":"与 BOOKSTORE_ADMIN_SECRET 相同的值"}'
 ```
 
 之后通过 `http://localhost:5173/admin-login` 登录后台。
@@ -159,8 +166,8 @@ curl -X POST http://localhost:8080/api/auth/register \
 - 会员中心的成长值、累计消费等为前端静态展示数据；
 - 优惠券可领取与试算，但尚未接入结算抵扣；
 - 首页 Banner 接口已实现，页面暂未渲染；
-- 图书 / 分类 / 标签的部分写接口尚未做管理员鉴权；
-- `application.yml` 中的数据库密码与 JWT 密钥为开发默认值，**部署前务必替换**。
+- `application.yml` 中的数据库密码与 JWT 密钥为开发默认值，**部署前务必替换**；
+- 公开充值接口已移除，余额仅保留演示用途。
 
 更完整的问题清单与改进建议见[开发文档 · 已知问题与技术债](docs/开发文档.md#12-已知问题与技术债)。
 
