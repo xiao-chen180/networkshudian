@@ -1,4 +1,4 @@
-﻿
+
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
@@ -139,13 +139,22 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/'
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue')
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.onError((error) => {
+  const chunkFailed = /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed/i.test(error?.message || '')
+  if (chunkFailed && !sessionStorage.getItem('chunk-reloaded')) {
+    sessionStorage.setItem('chunk-reloaded', '1')
+    window.location.reload()
+  }
 })
 
 router.beforeEach((to, from, next) => {

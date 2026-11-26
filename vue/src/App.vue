@@ -47,11 +47,13 @@
     </div>
 
     <main class="main">
-      <router-view v-slot="{ Component }">
-        <transition name="page" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <ErrorBoundary :key="route.fullPath">
+        <router-view v-slot="{ Component }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </ErrorBoundary>
     </main>
 
     <!-- 页脚 -->
@@ -96,6 +98,7 @@ import { useRoute } from 'vue-router'
 import { cartAPI, messageAPI } from './api'
 import UserMenu from './components/UserMenu.vue'
 import BookAssistant from './components/BookAssistant.vue'
+import ErrorBoundary from './components/common/ErrorBoundary.vue'
 
 const route = useRoute()
 
