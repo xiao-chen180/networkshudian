@@ -122,6 +122,7 @@ public class CartService {
         dto.setPrice(cartItem.getBook().getPrice());
         dto.setQuantity(cartItem.getQuantity());
         dto.setStock(cartItem.getBook().getStock());
+        dto.setImageUrl(cartItem.getBook().getImageUrl());
         return dto;
     }
 }

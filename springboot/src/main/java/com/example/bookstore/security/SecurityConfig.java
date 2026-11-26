@@ -31,6 +31,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // 文档与健康检查对匿名用户开放，便于联调与监控
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 // 管理后台与目录写接口仅管理员可访问
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/coupons/admin/**").hasRole("ADMIN")

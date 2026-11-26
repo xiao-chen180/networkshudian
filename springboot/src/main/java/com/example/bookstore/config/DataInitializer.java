@@ -453,14 +453,22 @@ public class DataInitializer implements CommandLineRunner {
                 book.setSummary(bookData.summary);
                 book.setCatalog(bookData.catalog);
                 book.setStock(bookData.stock);
+                if (book.getImageUrl() == null || book.getImageUrl().isBlank()) {
+                    book.setImageUrl(coverUrl(bookData));
+                }
                 bookRepository.save(book);
             } else {
                 Book newBook = new Book(null, bookData.title, bookData.author, bookData.publisher,
                     bookData.pageCount, bookData.price, bookData.isbn, bookData.summary,
-                    bookData.catalog, bookData.category, bookData.stock, null, null, null);
+                    bookData.catalog, bookData.category, bookData.stock, coverUrl(bookData), null, null);
                 bookRepository.save(newBook);
             }
         }
+    }
+
+    /** 封面文件由 scripts/fetch-book-covers.mjs 抓取，放在前端 public/covers 下。 */
+    private static String coverUrl(BookData bookData) {
+        return "/covers/" + bookData.isbn + ".jpg";
     }
 
     private static class BookData {

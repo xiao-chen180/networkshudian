@@ -11,6 +11,7 @@ public class CartItemDTO {
     private BigDecimal price;
     private Integer quantity;
     private Integer stock;
+    private String imageUrl;
 
     public CartItemDTO() {}
 
@@ -45,4 +46,7 @@ public class CartItemDTO {
 
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

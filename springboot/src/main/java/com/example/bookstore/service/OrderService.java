@@ -279,6 +279,34 @@ public class OrderService {
         }
     }
 
+    /**
+     * 关闭超时未支付订单：回滚库存、退回优惠券、发送站内信。
+     * 由 {@link com.example.bookstore.task.OrderTimeoutTask} 定时调用。
+     *
+     * @return 本次关闭的订单数
+     */
+    @Transactional
+    public int closeExpiredOrders(int timeoutMinutes) {
+        java.time.LocalDateTime deadline = java.time.LocalDateTime.now().minusMinutes(timeoutMinutes);
+        List<Order> expired = orderRepository.findByStatusAndCreatedAtBefore(
+                OrderStatus.PENDING.name(), deadline);
+        org.slf4j.LoggerFactory.getLogger(OrderService.class)
+                .debug("超时扫描：阈值 {}，命中 {} 笔待支付订单", deadline, expired.size());
+
+        for (Order order : expired) {
+            Long userId = order.getUser().getId();
+            order.setStatus(OrderStatus.CANCELLED.name());
+            restoreStock(order);
+            restoreCoupon(order, userId);
+            orderRepository.save(order);
+
+            messageService.sendMessage(userId, "订单已超时取消",
+                    "订单 SH" + String.format("%08d", order.getId())
+                            + " 超过 " + timeoutMinutes + " 分钟未支付，已自动取消，库存与优惠券已退回。", "ORDER");
+        }
+        return expired.size();
+    }
+
     private List<OrderItemDTO> loadCartAsItems(Long userId) {
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         if (cartItems.isEmpty()) {
@@ -352,13 +380,16 @@ public class OrderService {
         dto.setCreatedAt(order.getCreatedAt());
 
         List<OrderItemDTO> itemDTOs = order.getItems().stream()
-                .map(item -> new OrderItemDTO(
-                        item.getBook().getId(),
-                        item.getBook().getName(),
-                        item.getBook().getAuthor(),
-                        item.getQuantity(),
-                        item.getPrice()
-                ))
+                .map(item -> {
+                    OrderItemDTO itemDTO = new OrderItemDTO(
+                            item.getBook().getId(),
+                            item.getBook().getName(),
+                            item.getBook().getAuthor(),
+                            item.getQuantity(),
+                            item.getPrice());
+                    itemDTO.setImageUrl(item.getBook().getImageUrl());
+                    return itemDTO;
+                })
                 .collect(Collectors.toList());
         dto.setItems(itemDTOs);
 

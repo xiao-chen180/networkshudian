@@ -9,6 +9,7 @@ public class OrderItemDTO {
     private String author;
     private Integer quantity;
     private BigDecimal price;
+    private String imageUrl;
 
     public OrderItemDTO() {}
 
@@ -34,4 +35,7 @@ public class OrderItemDTO {
 
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

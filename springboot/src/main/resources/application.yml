@@ -17,7 +17,37 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
+# 业务参数
+bookstore:
+  # 订单超时自动取消
+  order-timeout:
+    minutes: 30          # 下单后多少分钟未支付自动取消
+    initial-delay: 30000 # 应用启动后首次扫描延迟（毫秒）
+    task-interval: 60000 # 扫描间隔（毫秒）
+
 # JWT配置
 jwt:
   secret: bookstore_jwt_secret_key_example_1234567890
   expiration: 86400000
+
+# 接口文档（springdoc / Swagger UI）
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+# 健康检查与指标
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true

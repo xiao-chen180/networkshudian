@@ -28,4 +28,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     /** 每个用户的订单数量：[userId, count] */
     @Query("select o.user.id, count(o) from Order o group by o.user.id")
     List<Object[]> countGroupedByUser();
+
+    /** 超时未支付订单（定时任务关闭用），带出明细与用户以便回滚库存、发通知 */
+    @EntityGraph(attributePaths = {"user", "items", "items.book"})
+    List<Order> findByStatusAndCreatedAtBefore(String status, java.time.LocalDateTime time);
 }
