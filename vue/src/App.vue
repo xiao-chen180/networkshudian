@@ -15,14 +15,17 @@
         </nav>
         <div class="tools">
           <template v-if="isLoggedIn">
-            <router-link to="/messages" class="ttl">消息</router-link>
+            <router-link to="/messages" class="ttl msg-link">
+              消息
+              <i v-if="unreadCount" class="dot-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</i>
+            </router-link>
             <span class="sep"></span>
             <router-link to="/favorites" class="ttl">收藏</router-link>
             <span class="sep"></span>
             <router-link to="/cart" class="ttl cart-bag">购物袋
               <i v-if="cartCount">{{ cartCount }}</i>
             </router-link>
-            <router-link to="/profile" class="ttl user-name">{{ username }}</router-link>
+            <UserMenu />
           </template>
           <template v-else>
             <router-link to="/login" class="ttl">登录</router-link>
@@ -89,12 +92,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { cartAPI, messageAPI } from './api'
+import UserMenu from './components/UserMenu.vue'
 
 const route = useRoute()
 
 const cartCount = ref(0)
 const unreadCount = ref(0)
-const username = computed(() => localStorage.getItem('username') || '')
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const isAdmin = computed(() => localStorage.getItem('role') === 'admin')
 
@@ -112,9 +115,17 @@ async function loadCartCount() {
   } catch { cartCount.value = 0 }
 }
 
-onMounted(loadCartCount)
-watch(route, loadCartCount)
-watch(isLoggedIn, loadCartCount)
+async function loadUnread() {
+  if (!isLoggedIn.value) { unreadCount.value = 0; return }
+  try {
+    const res = await messageAPI.getUnreadCount()
+    unreadCount.value = res.data?.count || 0
+  } catch { unreadCount.value = 0 }
+}
+
+onMounted(() => { loadCartCount(); loadUnread() })
+watch(route, () => { loadCartCount(); loadUnread() })
+watch(isLoggedIn, () => { loadCartCount(); loadUnread() })
 </script>
 
 <style>
@@ -144,15 +155,20 @@ html, body { height: 100%; }
 .nav a { font-size: 13px; color: var(--color-ink-soft); letter-spacing: .08em; padding: 4px 0; position: relative; }
 .nav a.on { color: var(--color-gold); }
 
-.tools { margin-left: auto; display: flex; align-items: center; gap: 20px; font-size: 12.5px; color: var(--color-ink-soft); letter-spacing: .06em; }
+.tools { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 12.5px; color: var(--color-ink-soft); letter-spacing: .06em; }
 .sep { width: 1px; height: 14px; background: var(--color-line-strong); }
 .ttl { color: inherit; }
+.ttl:hover { color: var(--color-gold); }
+.msg-link { position: relative; display: inline-flex; align-items: center; gap: 4px; }
+.dot-badge {
+  font-style: normal; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px;
+  background: var(--color-danger); color: #fff; font-size: 9px; line-height: 15px; text-align: center;
+}
 .cart-bag { display: flex; align-items: center; gap: 7px; color: var(--color-ink); }
 .cart-bag i {
   display: inline-flex; width: 18px; height: 18px; border-radius: 50%; background: var(--color-gold); color: #14150f;
   font-style: normal; font-size: 10px; align-items: center; justify-content: center; font-weight: 600;
 }
-.user-name { color: var(--color-gold); }
 
 /* ===== 公告 ===== */
 .notice {

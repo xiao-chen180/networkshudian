@@ -13,7 +13,7 @@
       <div class="grid" v-if="favorites.length">
         <div class="fav" v-for="fav in favorites" :key="fav.id">
           <router-link :to="`/books/${fav.bookId}`" class="cover-link">
-            <BookCover :title="fav.bookName" :author="fav.bookAuthor" src="" />
+            <BookCover :title="fav.bookName" :author="fav.bookAuthor" :src="fav.bookImageUrl" />
           </router-link>
           <div class="body">
             <router-link :to="`/books/${fav.bookId}`" class="t">{{ fav.bookName }}</router-link>
