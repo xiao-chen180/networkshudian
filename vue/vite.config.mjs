@@ -1,8 +1,22 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    // Element Plus 按需引入：模板里的 <el-xxx> 与 ElMessage/ElMessageBox 等按需加载，减小主包体积
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+      dts: false
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+      dts: false
+    })
+  ],
   server: {
     port: 5173,
     proxy: {
