@@ -137,6 +137,7 @@ async function createPendingOrder(orderData) {
     const res = await orderAPI.createPendingOrder({
       shippingAddress: orderData.address || '',
       phone: orderData.phone || '',
+      receiverName: orderData.receiverName || '',
       items,
       totalPrice: Number(orderData.finalPrice) || totalPrice.value,
       userCouponId: orderData.couponId ? Number(orderData.couponId) : null

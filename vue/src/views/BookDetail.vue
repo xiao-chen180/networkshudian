@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="detail-page">
     <div class="wrap" v-if="book">
       <div class="crumb">

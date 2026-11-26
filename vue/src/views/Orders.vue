@@ -20,8 +20,9 @@
       <template v-if="filteredOrders.length">
         <div class="order" v-for="order in filteredOrders" :key="order.id">
           <div class="order-h">
-            <span class="no">订单号 {{ orderNo(order) }}</span>
+            <router-link :to="`/orders/${order.id}`" class="no">订单号 {{ orderNo(order) }}</router-link>
             <span class="time" v-if="order.createdAt">{{ formatTime(order.createdAt) }}</span>
+            <router-link :to="`/orders/${order.id}`" class="detail-link">查看详情 →</router-link>
             <span class="st"><OrderStatusBadge :status="order.status" /></span>
           </div>
 
@@ -59,6 +60,7 @@
               <button class="obtn gold" v-if="order.status === 'SHIPPED'" @click="confirmReceive(order.id)">确认收货</button>
               <button class="obtn gold" v-if="order.status === 'COMPLETED'" @click="goBook(order.items?.[0]?.bookId)">再次购买</button>
               <button class="obtn" v-if="order.status === 'COMPLETED'">申请退换</button>
+              <button class="obtn" v-if="order.status === 'CANCELLED' || order.status === 'PAID'" @click="$router.push(`/orders/${order.id}`)">订单详情</button>
             </div>
           </div>
         </div>
@@ -212,6 +214,9 @@ h1 { margin-top: 14px; font-family: var(--font-display); font-size: var(--fs-h1)
 .order { border: 1px solid var(--color-line); background: var(--color-surface); margin-top: 18px; }
 .order-h { display: flex; align-items: center; gap: 24px; padding: 12px 20px; border-bottom: 1px solid var(--color-line); font-size: 10.5px; color: var(--color-ink-faint); letter-spacing: .08em; }
 .order-h .no { color: var(--color-ink-soft); }
+.order-h .no:hover { color: var(--color-gold); }
+.detail-link { color: var(--color-ink-faint); }
+.detail-link:hover { color: var(--color-gold); }
 .order-h .st { margin-left: auto; }
 
 .order-b { display: flex; padding: 4px 20px; }

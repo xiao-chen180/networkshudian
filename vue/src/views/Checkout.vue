@@ -387,6 +387,7 @@ function goToPayment() {
     addressId: a.id,
     address: shippingAddress,
     phone: a.phone,
+    receiverName: a.name || '',
     totalQuantity: totalQuantity.value,
     totalPrice: discountedTotal.value.toFixed(2),
     shippingFee: shippingFee.value.toFixed(2),

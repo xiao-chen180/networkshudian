@@ -51,7 +51,7 @@ public class OrderController {
         if (request.items() != null && !request.items().isEmpty()) {
             order = orderService.createPendingOrderWithItems(
                     userId, request.shippingAddress(), request.phone(),
-                    toOrderItems(request.items()), request.userCouponId());
+                    toOrderItems(request.items()), request.userCouponId(), request.receiverName());
         } else {
             order = orderService.createPendingOrder(
                     userId, request.shippingAddress(), request.phone(), request.userCouponId());

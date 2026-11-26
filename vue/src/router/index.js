@@ -43,6 +43,11 @@ const routes = [
     component: () => import('../views/Orders.vue')
   },
   {
+    path: '/orders/:id',
+    name: 'OrderDetail',
+    component: () => import('../views/OrderDetail.vue')
+  },
+  {
     path: '/checkout',
     name: 'Checkout',
     component: () => import('../views/Checkout.vue')
@@ -139,7 +144,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const requiresAuth = ['Profile', 'Orders', 'Checkout', 'Payment', 'ScanPayment', 'Addresses', 'VIP', 'Favorites', 'Notes', 'Messages', 'Coupons', 'Points', 'CheckIn']
+  const requiresAuth = ['Profile', 'Orders', 'OrderDetail', 'Checkout', 'Payment', 'ScanPayment', 'Addresses', 'VIP', 'Favorites', 'Notes', 'Messages', 'Coupons', 'Points', 'CheckIn']
   const requiresAdmin = ['Admin']
   const publicPages = ['Login', 'Register', 'AdminLogin']
   const isLoggedIn = localStorage.getItem('token')

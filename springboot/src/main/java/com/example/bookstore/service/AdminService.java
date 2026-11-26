@@ -165,6 +165,10 @@ public class AdminService {
             throw new CustomException("只有已付款的订单才能发货", HttpStatus.BAD_REQUEST.value());
         }
         order.setStatus("SHIPPED");
+        order.setShippedAt(java.time.LocalDateTime.now());
+        if (order.getTrackingNo() == null) {
+            order.setTrackingNo("SF" + System.currentTimeMillis());
+        }
         orderRepository.save(order);
         messageService.sendMessage(order.getUser().getId(), "订单已发货",
                 "订单 " + orderNo(order) + " 已发出，可在订单中心查看物流状态。", "ORDER");
@@ -178,6 +182,7 @@ public class AdminService {
             throw new CustomException("只有已发货的订单才能确认完成", HttpStatus.BAD_REQUEST.value());
         }
         order.setStatus("COMPLETED");
+        order.setCompletedAt(java.time.LocalDateTime.now());
         orderRepository.save(order);
         messageService.sendMessage(order.getUser().getId(), "订单已完成",
                 "订单 " + orderNo(order) + " 已完成，写下书评可得 5 积分。", "ORDER");
@@ -205,6 +210,7 @@ public class AdminService {
             bookRepository.save(book);
         }
         order.setStatus("CANCELLED");
+        order.setCancelledAt(java.time.LocalDateTime.now());
         orderRepository.save(order);
 
         // 已核销的优惠券随订单取消退回

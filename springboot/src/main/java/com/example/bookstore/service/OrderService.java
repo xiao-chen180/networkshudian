@@ -59,7 +59,7 @@ public class OrderService {
     public OrderDTO createOrder(Long userId, String shippingAddress, String phone, Long userCouponId) {
         User user = requireUser(userId);
         List<OrderItemDTO> items = loadCartAsItems(userId);
-        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, userCouponId);
+        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, null, userCouponId);
         cartItemRepository.deleteByUserId(userId);
         notifyCreated(savedOrder);
         return convertToDTO(savedOrder);
@@ -86,8 +86,15 @@ public class OrderService {
     @Transactional
     public OrderDTO createPendingOrderWithItems(Long userId, String shippingAddress, String phone,
                                                  List<OrderItemDTO> items, Long userCouponId) {
+        return createPendingOrderWithItems(userId, shippingAddress, phone, items, userCouponId, null);
+    }
+
+    @Transactional
+    public OrderDTO createPendingOrderWithItems(Long userId, String shippingAddress, String phone,
+                                                 List<OrderItemDTO> items, Long userCouponId,
+                                                 String receiverName) {
         User user = requireUser(userId);
-        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, userCouponId);
+        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, receiverName, userCouponId);
         notifyCreated(savedOrder);
         return convertToDTO(savedOrder);
     }
@@ -106,15 +113,17 @@ public class OrderService {
 
         String shippingAddress = null;
         String phone = null;
+        String receiverName = null;
         if (addressId != null) {
             Address address = addressRepository.findByIdAndUserId(addressId, userId)
                     .orElseThrow(() -> new CustomException("地址不存在", HttpStatus.NOT_FOUND.value()));
             shippingAddress = address.getProvince() + address.getCity() +
                     (address.getDistrict() != null ? address.getDistrict() : "") + address.getDetail();
             phone = address.getPhone();
+            receiverName = address.getName();
         }
 
-        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, userCouponId);
+        Order savedOrder = createOrderEntity(user, items, shippingAddress, phone, receiverName, userCouponId);
 
         PaymentMethod method = PaymentMethod.from(paymentMethod);
         if (method == PaymentMethod.BALANCE) {
@@ -123,6 +132,7 @@ public class OrderService {
                 throw new CustomException("余额不足", HttpStatus.BAD_REQUEST.value());
             }
             savedOrder.setStatus(OrderStatus.PAID.name());
+            savedOrder.setPaidAt(java.time.LocalDateTime.now());
             savedOrder = orderRepository.save(savedOrder);
         }
 
@@ -171,12 +181,14 @@ public class OrderService {
 
         order.setStatus(target.name());
         if (target == OrderStatus.CANCELLED && previous != OrderStatus.CANCELLED) {
+            order.setCancelledAt(java.time.LocalDateTime.now());
             restoreStock(order);
             restoreCoupon(order, userId);
             messageService.sendMessage(userId, "订单已取消",
                     "订单 SH" + String.format("%08d", order.getId()) + " 已取消，库存与优惠券已退回。", "ORDER");
         }
         if (target == OrderStatus.PAID && previous != OrderStatus.PAID) {
+            order.setPaidAt(java.time.LocalDateTime.now());
             adjustSalesCount(order, 1);
             notifyPaid(order);
         }
@@ -205,7 +217,7 @@ public class OrderService {
 
     /** 统一的下单核心：校验数量与库存、按用户折扣计算成交价、核销优惠券、扣减库存、落库。 */
     private Order createOrderEntity(User user, List<OrderItemDTO> items, String shippingAddress,
-                                    String phone, Long userCouponId) {
+                                    String phone, String receiverName, Long userCouponId) {
         if (items == null || items.isEmpty()) {
             throw new CustomException("订单明细不能为空", HttpStatus.BAD_REQUEST.value());
         }
@@ -213,6 +225,7 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setShippingAddress(shippingAddress);
+        order.setReceiverName(receiverName);
         order.setPhone(phone);
         order.setStatus(OrderStatus.PENDING.name());
 
@@ -296,6 +309,7 @@ public class OrderService {
         for (Order order : expired) {
             Long userId = order.getUser().getId();
             order.setStatus(OrderStatus.CANCELLED.name());
+            order.setCancelledAt(java.time.LocalDateTime.now());
             restoreStock(order);
             restoreCoupon(order, userId);
             orderRepository.save(order);
@@ -376,8 +390,14 @@ public class OrderService {
         dto.setCouponDiscount(order.getCouponDiscount());
         dto.setStatus(order.getStatus());
         dto.setShippingAddress(order.getShippingAddress());
+        dto.setReceiverName(order.getReceiverName());
         dto.setPhone(order.getPhone());
         dto.setCreatedAt(order.getCreatedAt());
+        dto.setPaidAt(order.getPaidAt());
+        dto.setShippedAt(order.getShippedAt());
+        dto.setCompletedAt(order.getCompletedAt());
+        dto.setCancelledAt(order.getCancelledAt());
+        dto.setTrackingNo(order.getTrackingNo());
 
         List<OrderItemDTO> itemDTOs = order.getItems().stream()
                 .map(item -> {
