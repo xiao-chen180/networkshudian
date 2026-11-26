@@ -169,6 +169,10 @@ export const messageAPI = {
   markAllAsRead: () => api.put('/api/messages/read-all')
 }
 
+export const aiAPI = {
+  search: (data) => api.post('/api/ai/search', data)
+}
+
 export const bannerAPI = {
   getActive: () => api.get('/api/banners/active')
 }

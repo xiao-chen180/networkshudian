@@ -85,6 +85,8 @@
         <div class="fbar"><span>© 2026 书香阁 BOOKSTORE</span><span>深夜书房</span></div>
       </div>
     </footer>
+
+    <BookAssistant v-if="!isFullscreen" />
   </div>
 </template>
 
@@ -93,6 +95,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { cartAPI, messageAPI } from './api'
 import UserMenu from './components/UserMenu.vue'
+import BookAssistant from './components/BookAssistant.vue'
 
 const route = useRoute()
 
