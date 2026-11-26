@@ -137,7 +137,9 @@
           <div class="savebox" v-if="totalSaved > 0">
             <b>这一单省了 ¥{{ fmt(totalSaved) }}</b>
             <span>
-              会员折扣 {{ fmt(memberDiscount) }} 元<template v-if="couponDiscount > 0"> + 优惠券 {{ fmt(couponDiscount) }} 元</template>。
+              <template v-if="memberDiscount > 0">会员折扣 {{ fmt(memberDiscount) }} 元</template>
+              <template v-if="couponDiscount > 0"><template v-if="memberDiscount > 0"> + </template>优惠券 {{ fmt(couponDiscount) }} 元</template>
+              <template v-if="shippingFree"><template v-if="memberDiscount > 0 || couponDiscount > 0"> + </template>免运费 10 元</template>。
             </span>
           </div>
 
@@ -277,7 +279,8 @@ const shippingFee = computed(() => {
   return discountedTotal.value >= 99 ? 0 : 10
 })
 const finalPrice = computed(() => Math.max(0, discountedTotal.value - toNum(couponDiscount.value) + shippingFee.value))
-const totalSaved = computed(() => memberDiscount.value + toNum(couponDiscount.value) + (shippingFee.value === 0 ? 10 : 0))
+const shippingFree = computed(() => shippingFee.value === 0 && originalTotal.value > 0)
+const totalSaved = computed(() => memberDiscount.value + toNum(couponDiscount.value) + (shippingFree.value ? 10 : 0))
 const canSubmit = computed(() => !!selectedAddress.value && cartItems.value.length > 0)
 
 const isPercent = (c) => c.type === 'PERCENT'
