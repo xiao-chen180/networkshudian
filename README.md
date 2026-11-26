@@ -2,9 +2,9 @@
 
 一个基于 **Spring Boot 3 + Vue 3** 的前后端分离网上书店示例项目，覆盖「浏览图书 → 加入购物车 → 结算支付 → 订单跟踪 → 会员成长」的完整购物闭环，并配套管理员运营后台。
 
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-6DB33F?logo=springboot&logoColor=white)
-![Vue](https://img.shields.io/badge/Vue-3.4-4FC08D?logo=vuedotjs&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-4.5-646CFF?logo=vite&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.3-6DB33F?logo=springboot&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?logo=mysql&logoColor=white)
 ![JWT](https://img.shields.io/badge/Auth-JWT-black?logo=jsonwebtokens&logoColor=white)
 
@@ -41,11 +41,11 @@
 
 | 层次 | 技术 |
 | --- | --- |
-| 后端 | Java 17、Spring Boot 3.2、Spring MVC、Spring Data JPA（Hibernate）、Spring Security |
+| 后端 | Java 17、Spring Boot 3.5、Spring MVC、Spring Data JPA（Hibernate）、Spring Security |
 | 鉴权 | JWT（JJWT 0.12.5）、BCrypt 密码加密 |
 | 数据库 | MySQL 8.x（JPA 自动建表） |
-| 前端 | Vue 3.4（组合式 API）、Vite 4、Vue Router 4、Element Plus 2、Axios |
-| 体验 | animate.css、@vueuse/motion、自定义懒加载指令、深色模式 |
+| 前端 | Vue 3.5（组合式 API）、Vite 8（Rolldown）、Vue Router 5、Element Plus 2.14、Axios |
+| 体验 | 自建设计系统（深夜书房）、程序化书封、自定义懒加载指令 |
 | 构建 | Maven Wrapper、npm |
 
 ## 系统架构
@@ -81,12 +81,14 @@ flowchart LR
 │       ├── security/     # JWT 与 Spring Security
 │       └── service/      # 业务服务
 ├── vue/                  # 前端工程（Vue 3 + Vite）
+│   ├── public/covers/    # 图书封面（文件名 = ISBN）
 │   └── src/
 │       ├── api/          # Axios 封装与业务 API
 │       ├── components/   # 公共组件
 │       ├── router/       # 路由与守卫
 │       ├── styles/       # 主题变量与动画
 │       └── views/        # 页面
+├── scripts/              # 工具脚本（fetch-book-covers.mjs 抓取封面）
 ├── .github/workflows/    # CI（后端/前端构建）
 ├── .editorconfig
 ├── pom.xml               # Maven 聚合 POM
@@ -174,3 +176,5 @@ curl -X POST http://localhost:8080/api/auth/register \
 ## 说明
 
 本项目仅用于学习交流。示例图书信息、评分与简介等数据仅作演示用途。
+
+图书封面图片来源于豆瓣读书公开页面，仅用于学习演示，版权归原作者及出版社所有。
