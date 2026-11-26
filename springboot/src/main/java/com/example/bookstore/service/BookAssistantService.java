@@ -54,7 +54,7 @@ public class BookAssistantService {
             "我想", "想找", "一本", "一本关于", "有没有", "推荐", "关于", "什么", "好看", "的书", "可以", "适合", "比较", "一些", "帮我", "给我");
 
     private static final String NOISE_PREFIX =
-            "的了是在我你他她它想找一有和就都也很能看点什么怎样与及或者把被让给对从到为以于还又再才更最";
+            "的了是在我你他她它想找一有和就都也很能看点什么怎样与及或者把被让给对从到为以于还又再才更最要得着过吧呢啊吗自己这那些个上下里";
 
     private final BookRepository bookRepository;
 
@@ -99,12 +99,13 @@ public class BookAssistantService {
                 .collect(Collectors.toList());
 
         // 命中太少时，补充评分高的同类书，避免结果过少
-        if (results.size() < 3) {
+        int padTarget = Math.min(3, size);
+        if (!results.isEmpty() && results.size() < padTarget) {
             Set<Long> picked = scored.stream().limit(size).map(sb -> sb.book().getId()).collect(Collectors.toSet());
             List<Map<String, Object>> extra = books.stream()
                     .filter(b -> !picked.contains(b.getId()))
                     .sorted(Comparator.comparing((Book b) -> b.getAvgRating() == null ? 0d : b.getAvgRating().doubleValue()).reversed())
-                    .limit(3 - results.size())
+                    .limit(padTarget - results.size())
                     .map(b -> toItem(b, "同店高评分，也许你会喜欢"))
                     .collect(Collectors.toList());
             results.addAll(extra);

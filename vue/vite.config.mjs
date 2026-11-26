@@ -26,6 +26,11 @@ export default defineConfig({
       }
     }
   },
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    include: ['src/**/*.spec.js']
+  },
   build: {
     // Element Plus 全量引入，单 chunk 体积较大但可长期缓存；调高告警阈值避免噪音
     chunkSizeWarningLimit: 1200,
