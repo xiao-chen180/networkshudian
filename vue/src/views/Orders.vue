@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="orders-page">
     <div class="wrap">
       <div class="pagehead">
@@ -59,7 +59,7 @@
               </template>
               <button class="obtn gold" v-if="order.status === 'SHIPPED'" @click="confirmReceive(order.id)">确认收货</button>
               <button class="obtn gold" v-if="order.status === 'COMPLETED'" @click="goBook(order.items?.[0]?.bookId)">再次购买</button>
-              <button class="obtn" v-if="order.status === 'COMPLETED'">申请退换</button>
+              <button class="obtn" v-if="canAfterSale(order)" @click="openAfterSale(order)">申请退换</button>
               <button class="obtn" v-if="order.status === 'CANCELLED' || order.status === 'PAID'" @click="$router.push(`/orders/${order.id}`)">订单详情</button>
             </div>
           </div>
@@ -74,6 +74,38 @@
         action-text="去逛书店"
         :action-to="'/books'"
       />
+
+      <!-- 售后申请 -->
+      <el-dialog v-model="showAfterSale" title="申请售后" width="460px" append-to-body>
+        <div class="as-form">
+          <div class="as-row">
+            <label>订单号</label>
+            <span class="mono">{{ afterSaleOrder ? orderNo(afterSaleOrder) : '' }}</span>
+          </div>
+          <div class="as-row">
+            <label>售后类型</label>
+            <el-radio-group v-model="afterSaleForm.type" size="small">
+              <el-radio-button label="REFUND">仅退款</el-radio-button>
+              <el-radio-button label="RETURN">退货退款</el-radio-button>
+              <el-radio-button label="EXCHANGE">换货</el-radio-button>
+            </el-radio-group>
+          </div>
+          <div class="as-row">
+            <label>问题描述</label>
+            <el-input v-model="afterSaleForm.reason" maxlength="60" show-word-limit placeholder="例如：封面破损、缺页、发错书" />
+          </div>
+          <div class="as-row">
+            <label>补充说明</label>
+            <el-input v-model="afterSaleForm.description" type="textarea" :rows="4" maxlength="300" show-word-limit placeholder="可补充具体情况，便于客服快速处理" />
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-line sm" @click="showAfterSale = false">取消</button>
+          <button class="btn-gold sm" :disabled="!afterSaleForm.type || afterSaleSubmitting" @click="submitAfterSale">
+            {{ afterSaleSubmitting ? '提交中…' : '提交申请' }}
+          </button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -81,7 +113,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { orderAPI } from '../api'
+import { orderAPI, afterSaleAPI } from '../api'
 import { ElMessage } from 'element-plus'
 import BookCover from '../components/common/BookCover.vue'
 import OrderStatusBadge from '../components/common/OrderStatusBadge.vue'
@@ -92,6 +124,38 @@ const orders = ref([])
 const activeTab = ref('ALL')
 const now = ref(Date.now())
 let timer = null
+
+/* 售后申请 */
+const showAfterSale = ref(false)
+const afterSaleOrder = ref(null)
+const afterSaleSubmitting = ref(false)
+const afterSaleForm = ref({ type: 'RETURN', reason: '', description: '' })
+const canAfterSale = (o) => ['PAID', 'SHIPPED', 'COMPLETED'].includes(o.status)
+
+function openAfterSale(order) {
+  afterSaleOrder.value = order
+  afterSaleForm.value = { type: 'RETURN', reason: '', description: '' }
+  showAfterSale.value = true
+}
+
+async function submitAfterSale() {
+  if (!afterSaleOrder.value) return
+  afterSaleSubmitting.value = true
+  try {
+    await afterSaleAPI.apply({
+      orderId: afterSaleOrder.value.id,
+      type: afterSaleForm.value.type,
+      reason: afterSaleForm.value.reason,
+      description: afterSaleForm.value.description
+    })
+    ElMessage.success('售后申请已提交，客服会在 24 小时内处理')
+    showAfterSale.value = false
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '提交失败')
+  } finally {
+    afterSaleSubmitting.value = false
+  }
+}
 
 const tabs = [
   { key: 'ALL', label: '全部' },
@@ -250,9 +314,19 @@ h1 { margin-top: 14px; font-family: var(--font-display); font-size: var(--fs-h1)
 .obtn.gold:hover { background: var(--color-gold-soft); }
 .expired-note { font-size: 9.5px; letter-spacing: .08em; color: var(--color-danger); margin-right: 4px; }
 
+.as-form { display: flex; flex-direction: column; gap: 16px; }
+.as-row { display: flex; flex-direction: column; gap: 8px; }
+.as-row label { font-size: 10.5px; letter-spacing: .1em; color: var(--color-ink-faint); }
+.as-row .mono { font-size: 12px; color: var(--color-ink-soft); }
+
 @media (max-width: 767px) {
   .order-b { flex-direction: column; }
   .ototal { width: auto; border-left: 0; margin: 0; padding-left: 0; padding-top: 12px; border-top: 1px solid var(--color-line); }
   .tabs { gap: 16px; overflow-x: auto; }
 }
+.as-form { display: flex; flex-direction: column; gap: 16px; }
+.as-row { display: flex; flex-direction: column; gap: 8px; }
+.as-row label { font-size: 10.5px; letter-spacing: .1em; color: var(--color-ink-faint); }
+.as-row .mono { font-size: 12px; color: var(--color-ink-soft); }
+
 </style>

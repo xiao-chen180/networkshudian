@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="admin">
     <!-- 侧栏 -->
     <aside class="sb">
@@ -25,6 +25,10 @@
         <a class="sbi" :class="{ on: activeMenu === 'orders' }" @click="activeMenu = 'orders'">
           <svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
           订单管理 <em v-if="pendingShip">{{ pendingShip }}</em>
+        </a>
+        <a class="sbi" :class="{ on: activeMenu === 'after-sales' }" @click="activeMenu = 'after-sales'">
+          <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+          售后管理 <em v-if="pendingAfterSales">{{ pendingAfterSales }}</em>
         </a>
       </div>
 
@@ -232,6 +236,55 @@
           </div>
         </template>
 
+        <!-- ============ 售后管理 ============ -->
+        <template v-else-if="activeMenu === 'after-sales'">
+          <div class="head">
+            <div>
+              <h1>售后管理</h1>
+              <div class="sub">共 {{ afterSales.length }} 条申请 · 待处理 {{ pendingAfterSales }} 条</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <table class="tbl">
+              <thead><tr>
+                <th style="width:60px">编号</th>
+                <th style="width:130px">订单号</th>
+                <th style="width:100px">用户</th>
+                <th style="width:90px">类型</th>
+                <th>问题描述</th>
+                <th style="width:90px">金额</th>
+                <th style="width:90px">状态</th>
+                <th style="width:160px">操作</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="a in afterSales" :key="a.id">
+                  <td class="mono">#{{ a.id }}</td>
+                  <td class="mono">{{ a.orderNo }}</td>
+                  <td>{{ a.username || '—' }}</td>
+                  <td><span class="tag">{{ a.typeText }}</span></td>
+                  <td>
+                    <div class="tt">{{ a.reason || '—' }}</div>
+                    <div class="ts" v-if="a.description">{{ a.description }}</div>
+                    <div class="ts reply" v-if="a.adminRemark">回复：{{ a.adminRemark }}</div>
+                  </td>
+                  <td class="mono">¥{{ fmt(a.refundAmount) }}</td>
+                  <td><span class="tag" :class="afterSaleTag(a.status)">{{ a.statusText }}</span></td>
+                  <td>
+                    <template v-if="a.status === 'PENDING'">
+                      <button class="tbtn" @click="openHandle(a, 'APPROVED')">通过</button>
+                      <button class="tbtn danger" @click="openHandle(a, 'REJECTED')">驳回</button>
+                    </template>
+                    <button class="tbtn plain" v-else-if="a.status === 'APPROVED'" @click="openHandle(a, 'COMPLETED')">标记完成</button>
+                    <span class="muted" v-else>—</span>
+                  </td>
+                </tr>
+                <tr v-if="!afterSales.length"><td colspan="8" class="blank">暂无售后申请</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
         <!-- ============ 用户管理 ============ -->
         <template v-else>
           <div class="head">
@@ -263,6 +316,23 @@
         </template>
       </div>
     </main>
+
+    <!-- 售后处理 -->
+    <el-dialog v-model="showAfterSaleDialog" :title="afterSaleAction === 'APPROVED' ? '通过售后申请' : afterSaleAction === 'REJECTED' ? '驳回售后申请' : '标记售后完成'" width="440px" class="nv-dialog">
+      <div class="as-dlg">
+        <p class="as-dlg-tip">
+          {{ afterSaleCurrent?.orderNo }} · {{ afterSaleCurrent?.typeText }} · ¥{{ fmt(afterSaleCurrent?.refundAmount) }}
+        </p>
+        <el-input v-model="afterSaleRemark" type="textarea" :rows="3" maxlength="200" show-word-limit
+                  :placeholder="afterSaleAction === 'REJECTED' ? '请说明驳回原因（会展示给用户）' : '可填写处理说明（会展示给用户）'" />
+      </div>
+      <template #footer>
+        <button class="tbtn plain" @click="showAfterSaleDialog = false">取消</button>
+        <button class="tbtn" :disabled="afterSaleSubmitting" @click="submitAfterSaleHandle">
+          {{ afterSaleSubmitting ? '提交中…' : '确认' }}
+        </button>
+      </template>
+    </el-dialog>
 
     <!-- 图书编辑 -->
     <el-dialog v-model="showBookDialog" :title="editingBook.id ? '编辑图书' : '上架新书'" width="640px" class="nv-dialog">
@@ -339,6 +409,41 @@ const books = ref([])
 const orders = ref([])
 const users = ref([])
 const categories = ref([])
+const afterSales = ref([])
+
+/* 售后处理弹窗 */
+const showAfterSaleDialog = ref(false)
+const afterSaleCurrent = ref(null)
+const afterSaleAction = ref('APPROVED')
+const afterSaleRemark = ref('')
+const afterSaleSubmitting = ref(false)
+const pendingAfterSales = computed(() => afterSales.value.filter(a => a.status === 'PENDING').length)
+const afterSaleTag = (s) => ({ PENDING: 'gold', APPROVED: 'sage', COMPLETED: 'sage', REJECTED: 'danger' }[s] || '')
+
+function openHandle(item, action) {
+  afterSaleCurrent.value = item
+  afterSaleAction.value = action
+  afterSaleRemark.value = ''
+  showAfterSaleDialog.value = true
+}
+
+async function submitAfterSaleHandle() {
+  if (!afterSaleCurrent.value) return
+  afterSaleSubmitting.value = true
+  try {
+    await adminAPI.handleAfterSale(afterSaleCurrent.value.id, {
+      status: afterSaleAction.value,
+      adminRemark: afterSaleRemark.value
+    })
+    ElMessage.success('已处理')
+    showAfterSaleDialog.value = false
+    await loadData()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '处理失败')
+  } finally {
+    afterSaleSubmitting.value = false
+  }
+}
 
 const bookSearch = ref('')
 const bookCategoryFilter = ref('')
@@ -352,7 +457,7 @@ const priceForm = reactive({ categoryId: null, type: 'fixed', adjustment: 0 })
 
 const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 const fmt = (n) => Number(n || 0).toFixed(2)
-const menuTitle = computed(() => ({ overview: '数据概览', books: '图书管理', orders: '订单管理', users: '用户管理' }[activeMenu.value]))
+const menuTitle = computed(() => ({ overview: '数据概览', books: '图书管理', orders: '订单管理', 'after-sales': '售后管理', users: '用户管理' }[activeMenu.value]))
 
 const pendingShip = computed(() => orders.value.filter(o => o.status === 'PAID').length)
 const recentOrders = computed(() => orders.value.slice(0, 5))
@@ -400,18 +505,20 @@ const orderFilters = computed(() => [
 ])
 
 async function loadData() {
-  const [d, b, o, u, c] = await Promise.all([
+  const [d, b, o, u, c, a] = await Promise.all([
     adminAPI.getDashboard().catch(() => ({ data: {} })),
     adminAPI.getAllBooks().catch(() => ({ data: [] })),
     adminAPI.getAllOrders().catch(() => ({ data: [] })),
     adminAPI.getAllUsers().catch(() => ({ data: [] })),
-    categoryAPI.getAll().catch(() => ({ data: [] }))
+    categoryAPI.getAll().catch(() => ({ data: [] })),
+    adminAPI.getAfterSales().catch(() => ({ data: [] }))
   ])
   stats.value = d.data || {}
   books.value = Array.isArray(b.data) ? b.data : (b.data?.content || [])
   orders.value = o.data || []
   users.value = u.data || []
   categories.value = c.data || []
+  afterSales.value = a.data || []
 }
 
 function openBook(book) {
@@ -668,6 +775,9 @@ onMounted(loadData)
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 12px; }
 
+.as-dlg-tip { font-size: 11px; color: var(--color-ink-muted); letter-spacing: .05em; margin-bottom: 12px; }
+.ts.reply { color: var(--color-gold); }
+
 @media (max-width: 1200px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .charts { flex-direction: column; }
@@ -675,4 +785,7 @@ onMounted(loadData)
   .bottom-grid { flex-direction: column; }
   .bottom-grid .panel:last-child { width: 100%; }
 }
+.as-dlg-tip { font-size: 11px; color: var(--color-ink-muted); letter-spacing: .05em; margin-bottom: 12px; }
+.ts.reply { color: var(--color-gold); }
+
 </style>

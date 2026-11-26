@@ -98,7 +98,16 @@ export const adminAPI = {
   createBook: (data) => api.post('/api/admin/books', data),
   updateBook: (id, data) => api.put(`/api/admin/books/${id}`, data),
   deleteBook: (id) => api.delete(`/api/admin/books/${id}`),
-  batchUpdatePrice: (data) => api.put('/api/admin/books/price', data)
+  batchUpdatePrice: (data) => api.put('/api/admin/books/price', data),
+  getAfterSales: () => api.get('/api/admin/after-sales'),
+  handleAfterSale: (id, data) => api.put(`/api/admin/after-sales/${id}/handle`, data)
+}
+
+export const afterSaleAPI = {
+  apply: (data) => api.post('/api/after-sales', data),
+  getMy: () => api.get('/api/after-sales/my'),
+  getById: (id) => api.get(`/api/after-sales/${id}`),
+  getPendingCount: () => api.get('/api/after-sales/my/pending-count')
 }
 
 export const reviewAPI = {

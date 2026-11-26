@@ -1,4 +1,4 @@
-
+﻿
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
@@ -46,6 +46,11 @@ const routes = [
     path: '/orders/:id',
     name: 'OrderDetail',
     component: () => import('../views/OrderDetail.vue')
+  },
+  {
+    path: '/after-sales',
+    name: 'AfterSales',
+    component: () => import('../views/AfterSales.vue')
   },
   {
     path: '/checkout',
@@ -144,7 +149,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const requiresAuth = ['Profile', 'Orders', 'OrderDetail', 'Checkout', 'Payment', 'ScanPayment', 'Addresses', 'VIP', 'Favorites', 'Notes', 'Messages', 'Coupons', 'Points', 'CheckIn']
+  const requiresAuth = ['AfterSales', 'Profile', 'Orders', 'OrderDetail', 'Checkout', 'Payment', 'ScanPayment', 'Addresses', 'VIP', 'Favorites', 'Notes', 'Messages', 'Coupons', 'Points', 'CheckIn']
   const requiresAdmin = ['Admin']
   const publicPages = ['Login', 'Register', 'AdminLogin']
   const isLoggedIn = localStorage.getItem('token')

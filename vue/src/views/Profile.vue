@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="pg">
     <div class="pg-wrap">
       <div class="crumb"><router-link to="/">首页</router-link><i>/</i><span>个人中心</span></div>
@@ -162,6 +162,7 @@ const links = [
   { to: '/points', label: '积分中心' },
   { to: '/checkin', label: '每日签到' },
   { to: '/messages', label: '消息中心' },
+  { to: '/after-sales', label: '售后服务' },
   { to: '/vip', label: '会员中心' }
 ]
 

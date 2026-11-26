@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-menu" ref="rootRef" @mouseenter="openOnHover" @mouseleave="closeOnLeave">
     <!-- 触发区 -->
     <button
@@ -97,6 +97,7 @@ const icons = {
   note: '<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h6"/></svg>',
   msg: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
   admin: '<svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>',
+  refund: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>',
   logout: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>'
 }
 
@@ -111,6 +112,7 @@ const secondary = [
   { to: '/points', label: '积分中心', icon: icons.coin },
   { to: '/notes', label: '读书笔记', icon: icons.note },
   { to: '/messages', label: '消息中心', icon: icons.msg },
+  { to: '/after-sales', label: '售后服务', icon: icons.refund },
   { to: '/addresses', label: '收货地址', icon: icons.pin }
 ]
 
