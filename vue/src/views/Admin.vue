@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="admin">
     <!-- 侧栏 -->
     <aside class="sb">
@@ -18,6 +18,10 @@
           <svg viewBox="0 0 24 24"><path d="M4 4h11l5 5v11H4z"/><path d="M15 4v5h5"/></svg>
           图书管理 <em>{{ books.length }}</em>
         </a>
+        <a class="sbi" :class="{ on: activeMenu === 'banners' }" @click="activeMenu = 'banners'">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16"/><path d="M3 9h18M8 14h8"/></svg>
+      运营 Banner
+      </a>
       </div>
 
       <div class="sbg">
@@ -236,6 +240,50 @@
           </div>
         </template>
 
+        <!-- ============ 运营 Banner ============ -->
+        <template v-else-if="activeMenu === 'banners'">
+          <div class="head">
+            <div>
+              <h1>运营 Banner</h1>
+              <div class="sub">首页横幅配置 · 当前 {{ banners.filter(b => b.status === 'ACTIVE').length }} 条生效</div>
+            </div>
+            <button class="tbtn" @click="openBanner(null)">+ 新建 Banner</button>
+          </div>
+
+          <div class="panel">
+            <table class="tbl">
+              <thead><tr>
+                <th style="width:60px">排序</th>
+                <th>标题 / 副标题</th>
+                <th style="width:200px">配图</th>
+                <th style="width:90px">关联图书</th>
+                <th style="width:90px">状态</th>
+                <th style="width:200px">操作</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="b in banners" :key="b.id">
+                  <td class="mono">{{ b.sortOrder }}</td>
+                  <td>
+                    <div class="tt">{{ b.title }}</div>
+                    <div class="ts">{{ b.subtitle || '—' }}</div>
+                  </td>
+                  <td>
+                    <img v-if="b.imageUrl" :src="b.imageUrl" class="bn-thumb" alt="" />
+                    <span v-else class="muted">无配图</span>
+                  </td>
+                  <td class="mono">{{ b.bookId ? '#' + b.bookId : '—' }}</td>
+                  <td><span class="tag" :class="{ gold: b.status === 'ACTIVE' }">{{ b.status === 'ACTIVE' ? '生效中' : '已下线' }}</span></td>
+                  <td>
+                    <button class="tbtn" @click="openBanner(b)">编辑</button>
+                    <button class="tbtn plain" @click="toggleBanner(b)">{{ b.status === 'ACTIVE' ? '下线' : '上线' }}</button>
+                    <button class="tbtn danger" @click="removeBanner(b)">删除</button>
+                  </td>
+                </tr>
+                <tr v-if="!banners.length"><td colspan="6" class="blank">暂无 Banner，点击右上角新建</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
         <!-- ============ 售后管理 ============ -->
         <template v-else-if="activeMenu === 'after-sales'">
           <div class="head">
@@ -334,6 +382,41 @@
       </template>
     </el-dialog>
 
+    <!-- Banner 编辑 -->
+    <el-dialog v-model="showBannerDialog" :title="editingBanner.id ? '编辑 Banner' : '新建 Banner'" width="520px" class="nv-dialog">
+      <el-form :model="editingBanner" label-position="top">
+        <el-form-item label="标题">
+          <el-input v-model="editingBanner.title" maxlength="40" show-word-limit placeholder="例如：本周主推 · 深夜书房" />
+        </el-form-item>
+        <el-form-item label="副标题">
+          <el-input v-model="editingBanner.subtitle" maxlength="80" show-word-limit placeholder="一句话说明，可留空" />
+        </el-form-item>
+        <div class="g2">
+          <el-form-item label="配图地址">
+            <el-input v-model="editingBanner.imageUrl" placeholder="/covers/xxx.jpg 或外链" />
+          </el-form-item>
+          <el-form-item label="关联图书 ID">
+            <el-input v-model="editingBanner.bookId" placeholder="留空则不可点击" />
+          </el-form-item>
+        </div>
+        <div class="g2">
+          <el-form-item label="排序（越小越靠前）">
+            <el-input v-model="editingBanner.sortOrder" type="number" />
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-radio-group v-model="editingBanner.status" size="small">
+              <el-radio-button label="ACTIVE">生效</el-radio-button>
+              <el-radio-button label="INACTIVE">下线</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+        </div>
+      </el-form>
+      <template #footer>
+        <button class="tbtn plain" @click="showBannerDialog = false">取消</button>
+        <button class="tbtn" :disabled="savingBanner" @click="saveBanner">{{ savingBanner ? '保存中…' : '保存' }}</button>
+      </template>
+    </el-dialog>
+
     <!-- 图书编辑 -->
     <el-dialog v-model="showBookDialog" :title="editingBook.id ? '编辑图书' : '上架新书'" width="640px" class="nv-dialog">
       <el-form :model="editingBook" label-position="top">
@@ -410,6 +493,12 @@ const orders = ref([])
 const users = ref([])
 const categories = ref([])
 const afterSales = ref([])
+const banners = ref([])
+
+/* Banner 编辑弹窗 */
+const showBannerDialog = ref(false)
+const savingBanner = ref(false)
+const editingBanner = reactive({ id: null, title: '', subtitle: '', imageUrl: '', bookId: null, sortOrder: 0, status: 'ACTIVE' })
 
 /* 售后处理弹窗 */
 const showAfterSaleDialog = ref(false)
@@ -427,6 +516,67 @@ function openHandle(item, action) {
   showAfterSaleDialog.value = true
 }
 
+
+/* ---- Banner 管理 ---- */
+function openBanner(item) {
+  if (item) {
+    Object.assign(editingBanner, item)
+  } else {
+    Object.assign(editingBanner, {
+      id: null, title: '', subtitle: '', imageUrl: '', bookId: null, sortOrder: 0, status: 'ACTIVE'
+    })
+  }
+  showBannerDialog.value = true
+}
+
+async function saveBanner() {
+  if (!editingBanner.title.trim()) {
+    ElMessage.warning('请填写标题')
+    return
+  }
+  savingBanner.value = true
+  try {
+    const payload = {
+      title: editingBanner.title,
+      subtitle: editingBanner.subtitle,
+      imageUrl: editingBanner.imageUrl,
+      bookId: editingBanner.bookId || null,
+      sortOrder: Number(editingBanner.sortOrder) || 0,
+      status: editingBanner.status
+    }
+    if (editingBanner.id) await adminAPI.updateBanner(editingBanner.id, payload)
+    else await adminAPI.createBanner(payload)
+    ElMessage.success('已保存')
+    showBannerDialog.value = false
+    await loadData()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '保存失败')
+  } finally {
+    savingBanner.value = false
+  }
+}
+
+async function toggleBanner(banner) {
+  try {
+    await adminAPI.toggleBanner(banner.id)
+    await loadData()
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
+
+async function removeBanner(banner) {
+  try {
+    await ElMessageBox.confirm(`确认删除「${banner.title}」？`, '删除 Banner', { type: 'warning' })
+  } catch { return }
+  try {
+    await adminAPI.deleteBanner(banner.id)
+    ElMessage.success('已删除')
+    await loadData()
+  } catch {
+    ElMessage.error('删除失败')
+  }
+}
 async function submitAfterSaleHandle() {
   if (!afterSaleCurrent.value) return
   afterSaleSubmitting.value = true
@@ -457,7 +607,7 @@ const priceForm = reactive({ categoryId: null, type: 'fixed', adjustment: 0 })
 
 const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
 const fmt = (n) => Number(n || 0).toFixed(2)
-const menuTitle = computed(() => ({ overview: '数据概览', books: '图书管理', orders: '订单管理', 'after-sales': '售后管理', users: '用户管理' }[activeMenu.value]))
+const menuTitle = computed(() => ({ overview: '数据概览', books: '图书管理', banners: '运营 Banner', orders: '订单管理', 'after-sales': '售后管理', users: '用户管理' }[activeMenu.value]))
 
 const pendingShip = computed(() => orders.value.filter(o => o.status === 'PAID').length)
 const recentOrders = computed(() => orders.value.slice(0, 5))
@@ -505,13 +655,14 @@ const orderFilters = computed(() => [
 ])
 
 async function loadData() {
-  const [d, b, o, u, c, a] = await Promise.all([
+  const [d, b, o, u, c, a, bn] = await Promise.all([
     adminAPI.getDashboard().catch(() => ({ data: {} })),
     adminAPI.getAllBooks().catch(() => ({ data: [] })),
     adminAPI.getAllOrders().catch(() => ({ data: [] })),
     adminAPI.getAllUsers().catch(() => ({ data: [] })),
     categoryAPI.getAll().catch(() => ({ data: [] })),
-    adminAPI.getAfterSales().catch(() => ({ data: [] }))
+    adminAPI.getAfterSales().catch(() => ({ data: [] })),
+    adminAPI.getBanners().catch(() => ({ data: [] }))
   ])
   stats.value = d.data || {}
   books.value = Array.isArray(b.data) ? b.data : (b.data?.content || [])
@@ -519,6 +670,7 @@ async function loadData() {
   users.value = u.data || []
   categories.value = c.data || []
   afterSales.value = a.data || []
+  banners.value = bn.data || []
 }
 
 function openBook(book) {
@@ -775,6 +927,7 @@ onMounted(loadData)
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
 .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 12px; }
 
+.bn-thumb { width: 132px; height: 52px; object-fit: cover; border: 1px solid var(--color-line); }
 .as-dlg-tip { font-size: 11px; color: var(--color-ink-muted); letter-spacing: .05em; margin-bottom: 12px; }
 .ts.reply { color: var(--color-gold); }
 
@@ -785,6 +938,7 @@ onMounted(loadData)
   .bottom-grid { flex-direction: column; }
   .bottom-grid .panel:last-child { width: 100%; }
 }
+.bn-thumb { width: 132px; height: 52px; object-fit: cover; border: 1px solid var(--color-line); }
 .as-dlg-tip { font-size: 11px; color: var(--color-ink-muted); letter-spacing: .05em; margin-bottom: 12px; }
 .ts.reply { color: var(--color-gold); }
 

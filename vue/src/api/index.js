@@ -100,7 +100,12 @@ export const adminAPI = {
   deleteBook: (id) => api.delete(`/api/admin/books/${id}`),
   batchUpdatePrice: (data) => api.put('/api/admin/books/price', data),
   getAfterSales: () => api.get('/api/admin/after-sales'),
-  handleAfterSale: (id, data) => api.put(`/api/admin/after-sales/${id}/handle`, data)
+  handleAfterSale: (id, data) => api.put(`/api/admin/after-sales/${id}/handle`, data),
+  getBanners: () => api.get('/api/admin/banners'),
+  createBanner: (data) => api.post('/api/admin/banners', data),
+  updateBanner: (id, data) => api.put(`/api/admin/banners/${id}`, data),
+  toggleBanner: (id) => api.put('/api/admin/banners/' + id + '/status'),
+  deleteBanner: (id) => api.delete('/api/admin/banners/' + id)
 }
 
 export const afterSaleAPI = {
