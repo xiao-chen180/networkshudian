@@ -45,7 +45,7 @@
 | 鉴权 | JWT（JJWT 0.12.5）、BCrypt 密码加密 |
 | 数据库 | MySQL 8.x（JPA 自动建表） |
 | 前端 | Vue 3.5（组合式 API）、Vite 8（Rolldown）、Vue Router 5、Element Plus 2.14、Axios |
-| 体验 | 自建设计系统（深夜书房）、程序化书封、自定义懒加载指令 |
+| 体验 | 自建设计系统（深夜书房）、真实图书封面（缺失时回退程序化书封）、自定义懒加载指令 |
 | 构建 | Maven Wrapper、npm |
 
 ## 系统架构
